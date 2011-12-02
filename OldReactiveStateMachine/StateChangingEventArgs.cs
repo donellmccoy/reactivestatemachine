@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace ReactiveStateMachine
+namespace OldReactiveStateMachine
 {
 
     public class StateChangingEventArgs : EventArgs

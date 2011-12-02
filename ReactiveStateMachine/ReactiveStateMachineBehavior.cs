@@ -13,7 +13,7 @@ namespace ReactiveStateMachine
     {
         #region private fields
 
-        private StateMachineAwareVisualStateManager _vsm;
+        private ReactiveVisualStateManager _vsm;
 
         #endregion
 
@@ -30,7 +30,7 @@ namespace ReactiveStateMachine
 
         protected override void OnAttached()
         {
-            _vsm = new StateMachineAwareVisualStateManager(AssociatedObject);
+            _vsm = new ReactiveVisualStateManager(AssociatedObject);
 
             VisualStateManager.SetCustomVisualStateManager(AssociatedObject, _vsm);
 
@@ -68,7 +68,7 @@ namespace ReactiveStateMachine
     public class Mapping : Freezable
     {
 
-        internal StateMachineAwareVisualStateManager VisualStateManager { get; set; }
+        internal ReactiveVisualStateManager VisualStateManager { get; set; }
 
         /// <summary>
         /// Not needed, but must be implemented
@@ -108,17 +108,17 @@ namespace ReactiveStateMachine
         /// StateMachine Dependency Property
         /// </summary>
         public static readonly DependencyProperty StateMachineProperty =
-            DependencyProperty.Register("StateMachine", typeof(ReactiveStateMachine), typeof(Mapping),
-                new FrameworkPropertyMetadata((ReactiveStateMachine)null,
+            DependencyProperty.Register("StateMachine", typeof(IReactiveStateMachine), typeof(Mapping),
+                new FrameworkPropertyMetadata(null,
                     new PropertyChangedCallback(OnStateMachineChanged)));
 
         /// <summary>
         /// Gets or sets the StateMachine property. This dependency property 
         /// indicates ....
         /// </summary>
-        public ReactiveStateMachine StateMachine
+        public IReactiveStateMachine StateMachine
         {
-            get { return (ReactiveStateMachine)GetValue(StateMachineProperty); }
+            get { return (IReactiveStateMachine)GetValue(StateMachineProperty); }
             set { SetValue(StateMachineProperty, value); }
         }
 
@@ -128,15 +128,15 @@ namespace ReactiveStateMachine
         private static void OnStateMachineChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
             Mapping target = (Mapping)d;
-            ReactiveStateMachine oldStateMachine = (ReactiveStateMachine)e.OldValue;
-            ReactiveStateMachine newStateMachine = target.StateMachine;
+            IReactiveStateMachine oldStateMachine = (IReactiveStateMachine)e.OldValue;
+            IReactiveStateMachine newStateMachine = target.StateMachine;
             target.OnStateMachineChanged(oldStateMachine, newStateMachine);
         }
 
         /// <summary>
         /// Provides derived classes an opportunity to handle changes to the StateMachine property.
         /// </summary>
-        protected virtual void OnStateMachineChanged(ReactiveStateMachine oldStateMachine, ReactiveStateMachine newStateMachine)
+        protected virtual void OnStateMachineChanged(IReactiveStateMachine oldStateMachine, IReactiveStateMachine newStateMachine)
         {
             if (oldStateMachine != null)
                 VisualStateManager.RemoveMapping(GroupName);

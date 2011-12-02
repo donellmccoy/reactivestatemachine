@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Windows;
 using System.Reactive.Linq;
+using System.Windows;
 
-namespace ReactiveStateMachine
+namespace OldReactiveStateMachine
 {
     public class StateMachineAwareVisualStateManager : VisualStateManager
     {
@@ -13,7 +13,7 @@ namespace ReactiveStateMachine
         /// <summary>
         /// A dictionary that maps the Group name of the VisualStateGroup to the associated ReactiveStateMachine
         /// </summary>
-        private readonly Dictionary<String, ReactiveStateMachine> _mappings = new Dictionary<string, ReactiveStateMachine>();
+        private readonly Dictionary<String, OldReactiveStateMachine> _mappings = new Dictionary<string, OldReactiveStateMachine>();
 
         private IDisposable _currentStateChangedSubscription;
         private IDisposable _transitionStoryboardCompletedSubscription;
@@ -75,7 +75,7 @@ namespace ReactiveStateMachine
                     _transitionStoryboardCompletedSubscription = Observable.FromEventPattern<EventArgs>(transition.Storyboard, "Completed").Subscribe(evt =>
                     {
 
-                        ReactiveStateMachine machine = null;
+                        OldReactiveStateMachine machine = null;
 
                         if (_mappings.TryGetValue(group.Name, out machine))
                         {
@@ -94,7 +94,7 @@ namespace ReactiveStateMachine
 
                         _currentStateChangedSubscription.Dispose();
 
-                        ReactiveStateMachine machine = null;
+                        OldReactiveStateMachine machine = null;
 
                         if (_mappings.TryGetValue(group.Name, out machine))
                         {
@@ -112,7 +112,7 @@ namespace ReactiveStateMachine
             catch { }
         }
 
-        internal void AddMapping(String groupName, ReactiveStateMachine stateMachine)
+        internal void AddMapping(String groupName, OldReactiveStateMachine stateMachine)
         {
             if (String.IsNullOrEmpty(groupName))
                 throw new ArgumentNullException("groupName");
@@ -151,7 +151,7 @@ namespace ReactiveStateMachine
         protected override bool GoToStateCore(FrameworkElement control, FrameworkElement stateGroupsRoot, string stateName, VisualStateGroup group, VisualState state, bool useTransitions)
         {
             //find out which StateMachine is affected and start transition 
-            ReactiveStateMachine targetMachine = null;
+            OldReactiveStateMachine targetMachine = null;
 
             if (_mappings.TryGetValue(group.Name, out targetMachine))
             {

@@ -1,65 +1,30 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
+using ReactiveStateMachine.Transitions;
+using ReactiveStateMachine.Triggers;
 
 namespace ReactiveStateMachine
 {
-    public abstract class ReactiveStateMachine
-    {
-        #region abstract methods
+    /// <summary>
+    /// TODO: Add error handling to all observables !
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
 
-        internal abstract void TransitionStateInternal(String fromState, String toState);
 
-        internal abstract void ExternalStateChanged(String fromState, String toState);
-
-        #endregion
-
-        #region public properties
-
-        public String Name { get; set; }
-
-        public StateMachineAwareVisualStateManager AssociatedVisualStateManager { get; internal set; }
-
-        #endregion
-
-        #region events
-
-        internal event EventHandler<StateChangedEventArgs> StateChanged;
-        internal event EventHandler<StateChangingEventArgs> StateChanging;
-
-        #endregion
-
-        #region internal methods
-
-        internal void RaiseStateChangingEvent(String fromState, String toState)
-        {
-            if (StateChanging != null)
-                StateChanging(this, new StateChangingEventArgs(fromState, toState));
-        }
-
-        internal void RaiseStateChangedEvent(String fromState, String toState)
-        {
-            if (StateChanged != null)
-                StateChanged(this, new StateChangedEventArgs(fromState, toState));
-        }
-
-        #endregion
-    }
-
-    public class ReactiveStateMachine<T> : ReactiveStateMachine, INotifyPropertyChanged where T : struct
+    public class ReactiveStateMachine<T> : IReactiveStateMachine, INotifyPropertyChanged, IDisposable
     {
         #region private fields
 
-        private readonly Dictionary<T, Action> _globalEnterActions = new Dictionary<T, Action>();
-        private readonly Dictionary<T, Action> _globalExitActions = new Dictionary<T, Action>();
-        //private readonly Dictionary<Tuple<T, T>, Action<Object>> _transitions = new Dictionary<Tuple<T, T>, Action<Object>>();
-        //private readonly Dictionary<T, ITimeBasedTransition<T>> _timedTransitions = new Dictionary<T, ITimeBasedTransition<T>>();
-        //private readonly Dictionary<Tuple<T, T>, ITransition<T>> _transitions = new Dictionary<Tuple<T, T>, ITransition<T>>();
+        private BlockingCollection<Action> _queue = new BlockingCollection<Action>();
 
-
-        private readonly object _currentStateLock;
+        private readonly Dictionary<T, State<T>> _states = new Dictionary<T, State<T>>();
 
         private bool _running;
 
@@ -67,10 +32,9 @@ namespace ReactiveStateMachine
 
         #region ctor
 
-        public ReactiveStateMachine(String name, T startState)
+        public ReactiveStateMachine(T startState)
         {
-            Name = name;
-            CurrentState = startState;
+            StartState = startState;
         }
 
         #endregion
@@ -100,201 +64,412 @@ namespace ReactiveStateMachine
 
         #endregion
 
+        #region StartState
+
+        private T _startState;
+
+        /// <summary>
+        /// Gets or sets the StartState property. This observable property 
+        /// indicates ....
+        /// </summary>
+        public T StartState
+        {
+            get { return _startState; }
+            set
+            {
+                if (!_currentState.Equals(value))
+                {
+                    _startState = value;
+                    RaisePropertyChanged("StartState");
+                }
+            }
+        }
+
         #endregion
 
-        #region public events
+        #region AssociatedVisualStateManager
 
-        public new event EventHandler<StateChangingEventArgs<T>> StateChanging;
-        public new event EventHandler<StateChangedEventArgs<T>> StateChanged;
+        public ReactiveVisualStateManager AssociatedVisualStateManager
+        {
+            get;
+            set;
+        }
 
-        public event EventHandler<StateMachineExceptionEventArgs> StateMachineException;
+        public void ExternalStateChanged(string fromState, string toState)
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
 
         #endregion
 
         #region public methods
 
-        public void AddTransition<TTrigger>(T fromState, T toState, Action<TTrigger> transitionAction, IObservable<TTrigger> trigger)
-        {
-            trigger.Where(e => CurrentState.Equals(fromState)).Subscribe(e => TransitionState(fromState, toState, e, transitionAction), OnStateMachineError);
-        }
+        #region State Machine Management
 
-        public void AddTransition(T fromState, T toState, Action<object> transitionAction, TimeSpan after)
-        {
-            Observable.FromEventPattern<StateChangedEventArgs<T>>(this, "StateChanged").
-                Where(evt => evt.EventArgs.CurrentState.Equals(fromState)).
-                Delay(after).
-                Where(evt => CurrentState.Equals(fromState)).
-                ObserveOnDispatcher().
-                Subscribe(evt => TransitionState(fromState, toState, null, transitionAction), OnStateMachineError);
-        }
-
-        //public void AddStateChangeTrigger(T fromState, T toState, TimeSpan after)
-        //{
-        //    _timedTransitions.Add(fromState, new Tuple<T, TimeSpan>(toState, after));
-        //}
-
-        public void SetGlobalEnterStateAction(T state, Action enterStateAction)
-        {
-            if (enterStateAction == null)
-                throw new ArgumentNullException("enterStateAction");
-
-            _globalEnterActions[state] = enterStateAction;
-        }
-
-        public void SetGlobalExitStateAction(T state, Action exitStateAction)
-        {
-            if (exitStateAction == null)
-                throw new ArgumentNullException("exitStateAction");
-
-            _globalExitActions[state] = exitStateAction;
-        }
-
-        //public IDisposable AddStateChangeTrigger(T fromState, T toState, IObservable<Object> trigger)
-        //{
-        //    return trigger.Where(unit => CurrentState.Equals(fromState)).Subscribe((unit) => TransitionState(fromState, toState, unit));
-        //}
-
-        public void AddStateToggleTrigger<TTrigger>(T stateOne, T stateTwo, IObservable<TTrigger> trigger, Action<TTrigger> transitionActionOne, Action<TTrigger> transitionActionTwo)
-        {
-            trigger.Subscribe(unit =>
-            {
-                if (CurrentState.Equals(stateOne))
-                    TransitionState(stateOne, stateTwo, unit, transitionActionOne);
-                else
-                    TransitionState(stateTwo, stateOne, unit, transitionActionTwo);
-
-            }, OnStateMachineError);
-        }
-
-        public void AddAutomaticStateChange(T fromState, T toState, Action<object> transitionAction)
-        {
-            Observable.FromEventPattern<StateChangedEventArgs<T>>(this, "StateChanged").Where(evt => evt.EventArgs.CurrentState.Equals(fromState)).Subscribe(evt => TransitionState(fromState, toState, null, transitionAction), OnStateMachineError);
-        }
-
-        //public void SetTransitionAction(T fromState, T toState, Action<Object> transitionAction)
-        //{
-        //    Tuple<T, T> key = new Tuple<T, T>(fromState, toState);
-        //    _transitions[key] = transitionAction;
-        //}
-
-        /// <summary>
-        /// Starts the state machine by transitioning from an indeterminate state to the initial state
-        /// </summary>
         public void Start()
         {
             if (_running)
                 throw new InvalidOperationException("State machine is already running");
-
-            //enter the target state
-            Action enterAction = null;
-            if (_globalEnterActions.TryGetValue(CurrentState, out enterAction))
-                enterAction();
-
-            if (AssociatedVisualStateManager != null)
-                AssociatedVisualStateManager.TriggerStateChange(Name, "", CurrentState.ToString());
-
             _running = true;
+
+            _queue = new BlockingCollection<Action>();
+
+            Task.Factory.StartNew(() =>
+            {
+                foreach (Action transition in _queue.GetConsumingEnumerable())
+                {
+                    transition();
+                }
+            });
+
+            _queue.Add(StartStateMachineInternal);
+        }
+
+        public void Stop()
+        {
+            if (!_running)
+                return;
+
+            _running = false;
+
+            _queue.CompleteAdding();
+
+            while (!_queue.IsCompleted)
+                Thread.Sleep(10);
         }
 
         #endregion
 
-        
-        public void TransitionState<TTrigger>(T fromState, T toState, TTrigger trigger, Action<TTrigger> transitionAction)
+        #region Configuration API
+
+        #region Entry Actions
+
+        /// <summary>
+        /// Adds an entry action to the given state, which will be executed whenever the state is entered
+        /// </summary>
+        /// <param name="enteredState"></param>
+        /// <param name="entryAction"></param>
+        public void AddEntryAction(T enteredState, Action entryAction)
         {
-#if DEBUG
-            Console.WriteLine("\nTransitioning " + Name + " from " + fromState + " to " + toState);
-#endif
-            
-            if (!fromState.Equals(toState))
-            {
-                //exit the current state
-                Action exitAction = null;
-                if (_globalExitActions.TryGetValue(fromState, out exitAction))
-                    exitAction();
-            }
-            
-            //do transition here
-            if (transitionAction != null)
-                transitionAction(trigger);
-
-            if (!fromState.Equals(toState))
-            {
-                //enter the target state
-                Action enterAction = null;
-                if (_globalEnterActions.TryGetValue(toState, out enterAction))
-                    enterAction();
-            }
-            
-            //Raise an event indicating that we are about to change the state
-            RaiseStateChangingEvent(fromState, toState);
-
-            //Set the new state
-            CurrentState = toState;
-
-            //if we have an associated VSM we trigger its StateChange mechanism
-            //the VSM will then trigger the ultimate StateChanged event via ExternalStateChanged (see below)
-            if (AssociatedVisualStateManager != null)
-            {
-                AssociatedVisualStateManager.TriggerStateChange(Name, fromState.ToString(), toState.ToString());
-            }
-            //if there's no associated VSM, we throw the StateChanged event here
-            else
-            {
-                RaiseStateChangedEvent(fromState, toState);
-            }
+            var state = GetState(enteredState);
+            state.AddEntryAction(entryAction);
         }
+
+        /// <summary>
+        /// Adds an entry action to the given state, which will be executed whenever the state is entered and the given condition evaluates to true
+        /// </summary>
+        /// <param name="enteredState"></param>
+        /// <param name="entryAction"></param>
+        /// <param name="condition"></param>
+        public void AddEntryAction(T enteredState, Action entryAction, Func<bool> condition)
+        {
+            var state = GetState(enteredState);
+            state.AddEntryAction(entryAction, condition);
+        }
+
+        /// <summary>
+        /// Adds an entry action to the given state, which will be executed whenever the state is entered from the given previous state
+        /// </summary>
+        /// <param name="enteredState"></param>
+        /// <param name="fromState"></param>
+        /// <param name="entryAction"></param>
+        public void AddEntryAction(T enteredState, T fromState, Action entryAction)
+        {
+            var state = GetState(enteredState);
+            state.AddEntryAction(fromState, entryAction);
+        }
+
+        /// <summary>
+        /// Adds an entry action to the given state, which will be executed whenever the state is entered from the given previous state and the given condition evaluates to true
+        /// </summary>
+        /// <param name="enteredState"></param>
+        /// <param name="fromState"></param>
+        /// <param name="entryAction"></param>
+        /// <param name="condition"></param>
+        public void AddEntryAction(T enteredState, T fromState, Action entryAction, Func<bool> condition)
+        {
+            var state = GetState(enteredState);
+            state.AddEntryAction(fromState, entryAction, condition);
+        }
+
+        #endregion
+
+        #region Exit Actions
+
+        /// <summary>
+        /// Adds an exit action to the given state, which will be executed whenever the state is exited
+        /// </summary>
+        /// <param name="currentState"></param>
+        /// <param name="exitAction"></param>
+        public void AddExitAction(T currentState, Action exitAction)
+        {
+            var state = GetState(currentState);
+            state.AddExitAction(exitAction);
+        }
+
+        /// <summary>
+        /// Adds an exit action to the given state, which will be executed whenever the state is exited and the given condition evaluates to true
+        /// </summary>
+        /// <param name="currentState"></param>
+        /// <param name="exitAction"></param>
+        /// <param name="condition"></param>
+        public void AddExitAction(T currentState, Action exitAction, Func<bool> condition)
+        {
+            var state = GetState(currentState);
+            state.AddExitAction(exitAction, condition);
+        }
+
+        /// <summary>
+        /// Adds an exit action to the given state, which will be executed whenever the state is exited to the given next state
+        /// </summary>
+        /// <param name="currentState"></param>
+        /// <param name="toState"></param>
+        /// <param name="exitAction"></param>
+        public void AddExitAction(T currentState, T toState, Action exitAction)
+        {
+            var state = GetState(currentState);
+            state.AddExitAction(toState, exitAction);
+        }
+
+        /// <summary>
+        /// Adds an exit action to the given state, which will be executed whenever the state is exited to the given next state and the given condition evaluates to true
+        /// </summary>
+        /// <param name="currentState"></param>
+        /// <param name="toState"></param>
+        /// <param name="exitAction"></param>
+        /// <param name="condition"></param>
+        public void AddExitAction(T currentState, T toState, Action exitAction, Func<bool> condition)
+        {
+            var state = GetState(currentState);
+            state.AddExitAction(toState, exitAction, condition);
+        }
+
+        #endregion
+
+        #region Triggered Transitions
+
+        public void AddTransition<TTrigger>(T fromState, T toState, IObservable<TTrigger> trigger) where TTrigger : class
+        {
+            AddTransition(fromState, toState, trigger, null, null);
+        }
+
+        public void AddTransition<TTrigger>(T fromState, T toState, IObservable<TTrigger> trigger, Func<TTrigger, bool> condition) where TTrigger : class
+        {
+            AddTransition(fromState, toState, trigger, condition, null);
+        }
+
+        public void AddTransition<TTrigger>(T fromState, T toState, IObservable<TTrigger> trigger, Action<TTrigger> transitionAction) where TTrigger : class
+        {
+            AddTransition(fromState, toState, trigger, null, transitionAction);
+        }
+
+        public void AddTransition<TTrigger>(T fromState, T toState, IObservable<TTrigger> trigger, Func<TTrigger, bool> condition, Action<TTrigger> transitionAction) where TTrigger : class
+        {
+            AddTransition(fromState, toState, new Trigger<TTrigger>(trigger), condition, transitionAction);
+        }
+
+        public void AddTransition<TTrigger>(T fromState, T toState, Trigger<TTrigger> trigger) where TTrigger : class
+        {
+            AddTransition(fromState, toState, trigger, null, null);
+        }
+
+        public void AddTransition<TTrigger>(T fromState, T toState, Trigger<TTrigger> trigger, Func<TTrigger, bool> condition) where TTrigger : class
+        {
+            AddTransition(fromState, toState, trigger, condition, null);
+        }
+
+        public void AddTransition<TTrigger>(T fromState, T toState, Trigger<TTrigger> trigger, Action<TTrigger> transitionAction) where TTrigger : class
+        {
+            AddTransition(fromState, toState, trigger, null, transitionAction);
+        }
+
+        public void AddTransition<TTrigger>(T fromState, T toState, Trigger<TTrigger> trigger, Func<TTrigger, bool> condition, Action<TTrigger> transitionAction) where TTrigger:class
+        {
+            var stateObject = GetState(fromState);
+
+            var transition = new TriggeredTransition<T, TTrigger>(fromState, toState, trigger, transitionAction, condition);
+
+            stateObject.AddTriggeredTransition(transition);
+        }
+
+        #endregion
+
+        #region Time-based Transitions
+
+        public void AddTransition(T fromState, T toState, TimeSpan after)
+        {
+            AddTransition(fromState, toState, after, null, null);
+        }
+
+        public void AddTransition(T fromState, T toState, TimeSpan after, Func<bool> condition)
+        {
+            AddTransition(fromState, toState, after, condition, null);
+        }
+        
+        /// <summary>
+        /// Adds a transition from <para>fromState</para> to <para>toState</para>, which will be made when the given time span has elapsed. The given transition action is executed during the transition
+        /// </summary>
+        /// <param name="fromState"></param>
+        /// <param name="toState"></param>
+        /// <param name="after"></param>
+        /// <param name="transitionAction"></param>
+        public void AddTransition(T fromState, T toState, TimeSpan after, Action transitionAction)
+        {
+            AddTransition(fromState, toState, after, null, transitionAction);
+        }
+
+        public void AddTransition(T fromState, T toState, TimeSpan after, Func<bool> condition, Action transitionAction)
+        {
+            var stateObject = GetState(fromState);
+
+            if (stateObject.TimedTransition != null)
+                throw new InvalidOperationException("Timebased Transition has already been set !");
+
+            stateObject.TimedTransition = new TimedTransition<T, object>(fromState, toState, after, o => condition(), o => transitionAction());
+        }
+
+        #endregion
+
+        #region Automatic Transitions
+
+        public void AddAutomaticTransition(T fromState, T toState)
+        {
+            AddAutomaticTransition(fromState, toState, null, null);
+        }
+
+        public void AddAutomaticTransition(T fromState, T toState, Func<bool> condition)
+        {
+            AddAutomaticTransition(fromState, toState, condition, null);
+        }
+
+        /// <summary>
+        /// Adds an automatic state transition from <para>fromState</para> to <para>toState</para>. This transition is initiated as soon as <para>fromState</para> is active.
+        /// </summary>
+        /// <param name="fromState"></param>
+        /// <param name="toState"></param>
+        /// <param name="transitionAction"></param>
+        public void AddAutomaticTransition(T fromState, T toState, Action transitionAction)
+        {
+            AddAutomaticTransition(fromState, toState, null, transitionAction);
+        }
+
+        public void AddAutomaticTransition(T fromState, T toState, Func<bool> condition, Action transitionAction)
+        {
+            var stateObject = GetState(fromState);
+
+            if (stateObject.AutomaticTransition != null)
+                throw new InvalidOperationException("Automatic Transition has already been set !");
+
+            stateObject.AutomaticTransition = new Transition<T, object>(fromState, toState, o => condition(), o => transitionAction());
+        }
+
+        #endregion
+
+        #region State Toggles
+
+        /// <summary>
+        /// Adds a state toggle between <para>stateOne</para> and <para>stateTwo</para>, which will be triggered by the given trigger. The given transition actions are executed during the respective state transition.
+        /// </summary>
+        /// <typeparam name="TTrigger"></typeparam>
+        /// <param name="stateOne"></param>
+        /// <param name="stateTwo"></param>
+        /// <param name="trigger"></param>
+        /// <param name="transitionActionOne"></param>
+        /// <param name="transitionActionTwo"></param>
+        public void AddStateToggle<TTrigger>(T stateOne, T stateTwo, IObservable<TTrigger> trigger, Action<TTrigger> transitionActionOne, Action<TTrigger> transitionActionTwo) where TTrigger : class
+        {
+            AddTransition(stateOne, stateTwo, trigger, transitionActionOne);
+            AddTransition(stateTwo, stateOne, trigger, transitionActionTwo);
+        }
+
+        #endregion
+
+        #endregion
+
+        #endregion
 
         #region private methods
 
-        private void RaiseStateChangingEvent(T fromState, T toState)
+        private State<T> GetState(T state)
         {
-            RaiseStateChangingEvent(fromState.ToString(), toState.ToString());
-
-            if (StateChanging != null)
-                StateChanging(this, new StateChangingEventArgs<T>(fromState, toState));
+            State<T> stateObject;
+            if (!_states.TryGetValue(state, out stateObject))
+            {
+                stateObject = new State<T>(state, this);
+                _states.Add(state, stateObject);
+            }
+            return stateObject;
         }
 
-        private void RaiseStateChangedEvent(T fromState, T toState)
+        private void StartStateMachineInternal()
         {
-            RaiseStateChangedEvent(fromState.ToString(), toState.ToString());
+            var state = GetState(StartState);
 
-            if (StateChanged != null)
-                StateChanged(this, new StateChangedEventArgs<T>(fromState, toState));
+            state.Enter(StartState);
+            
+            CurrentState = StartState;
+
+            if (state.TryAutomaticTransition())
+                return;
+
+            state.ResumeTransitions();
         }
 
-        private void RaiseStateMachineExceptionEvent(StateMachineExceptionEventArgs e)
+        internal void TransitionStateInternal<TTrigger>(T fromState, T toState, TTrigger trigger, Action<TTrigger> transitionAction)
         {
-            EventHandler<StateMachineExceptionEventArgs> handler = StateMachineException;
-            if (handler != null) handler(this, e);
+            TransitionOverride(trigger);
+
+            var isInternalTransition = fromState.Equals(toState);
+
+            if (!CurrentState.Equals(fromState))
+                return;
+
+            var currentState = GetState(fromState);
+            var futureState = GetState(toState);
+
+            //exit the current state
+            if (!isInternalTransition)
+            {
+                currentState.IgnoreTransitions();
+                currentState.Exit(toState);
+            }
+
+            //transition from old state to new
+            if (transitionAction != null)
+                transitionAction(trigger);
+
+            //enter the next state
+            if (!isInternalTransition)
+            {
+                futureState.Enter(fromState);
+            }
+
+            CurrentState = toState;
+
+            //add an automatic transition to the queue, if available
+            if (futureState.TryAutomaticTransition())
+                return;
+
+            if(!isInternalTransition)
+                futureState.ResumeTransitions();
+
+            futureState.StartTimeBasedTransition();
         }
 
-        private void OnStateMachineError(Exception e)
+        internal void EnqueueTransition(Action transition)
         {
-            RaiseStateMachineExceptionEvent(new StateMachineExceptionEventArgs(e));
+            _queue.Add(transition);
         }
 
         #endregion
 
-        #region internal methods
+        #region protected methods
 
-        internal override void TransitionStateInternal(string fromState, string toState)
+        protected virtual void TransitionOverride<TTrigger>(TTrigger trigger)
         {
-            T state1 = (T)Enum.Parse(typeof(T), fromState);
-            T state2 = (T)Enum.Parse(typeof(T), toState);
-
-            TransitionState<object>(state1, state2, null, null);
-        }
-
-        internal override void ExternalStateChanged(string fromState, string toState)
-        {
-            T state1 = default(T);
-
-            if (!String.IsNullOrEmpty(fromState))
-                state1 = (T)Enum.Parse(typeof(T), fromState);
-
-            T state2 = (T)Enum.Parse(typeof(T), toState);
-
-            RaiseStateChangedEvent(state1, state2);
+            
         }
 
         #endregion
@@ -310,5 +485,13 @@ namespace ReactiveStateMachine
 
         #endregion
 
+        #region IDisposable Members
+        //TODO: proper IDisposable implementation
+        public void Dispose()
+        {
+            throw new NotImplementedException();
+        }
+
+        #endregion
     }
 }
