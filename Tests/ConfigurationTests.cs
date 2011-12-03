@@ -7,14 +7,18 @@ using NUnit.Framework;
 namespace Tests
 {
     [TestFixture]
-    public class ConfigurationTest : AbstractReactiveStateMachineTest
+    public class ConfigurationTests : AbstractReactiveStateMachineTest
     {
         [Test]
         public void StartStateIsSetCorrectly()
         {
-            StateMachine = new ReactiveStateMachine.ReactiveStateMachine<TestStates>(TestStates.Collapsed);
-
             Assert.AreEqual(StateMachine.StartState, TestStates.Collapsed);
+        }
+
+        [Test]
+        public void EntryActionIsNotAllowedForInternalTransitions()
+        {
+            Assert.Throws<InvalidOperationException>(() => StateMachine.AddEntryAction(TestStates.Collapsed, TestStates.Collapsed, null));
         }
 
     }

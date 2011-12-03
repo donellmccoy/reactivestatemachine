@@ -11,12 +11,6 @@ namespace Tests
     public class LifetimeTests : AbstractReactiveStateMachineTest
     {
 
-        [SetUp]
-        public void SetUpLifetimeTests()
-        {
-            StateMachine = new ReactiveStateMachine.ReactiveStateMachine<TestStates>(TestStates.Collapsed);
-        }
-
         [Test]
         public void StartingTwiceThrows()
         {

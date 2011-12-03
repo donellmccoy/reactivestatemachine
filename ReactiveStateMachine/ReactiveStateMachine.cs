@@ -2,9 +2,6 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Linq;
-using System.Reactive.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using ReactiveStateMachine.Transitions;
@@ -104,6 +101,23 @@ namespace ReactiveStateMachine
 
         #endregion
 
+        #region public events
+
+        public event EventHandler<StateChangedEventArgs<T>> StateChanged;
+
+        private void RaiseStateChanged(StateChangedEventArgs<T> e)
+        {
+            EventHandler<StateChangedEventArgs<T>> handler = StateChanged;
+            if (handler != null) handler(this, e);
+        }
+
+        private void RaiseStateChanged(T fromState, T toState)
+        {
+            RaiseStateChanged(new StateChangedEventArgs<T>(fromState, toState));
+        }
+
+        #endregion
+
         #region public methods
 
         #region State Machine Management
@@ -153,8 +167,7 @@ namespace ReactiveStateMachine
         /// <param name="entryAction"></param>
         public void AddEntryAction(T enteredState, Action entryAction)
         {
-            var state = GetState(enteredState);
-            state.AddEntryAction(entryAction);
+            AddEntryAction(enteredState, entryAction, null);
         }
 
         /// <summary>
@@ -177,8 +190,7 @@ namespace ReactiveStateMachine
         /// <param name="entryAction"></param>
         public void AddEntryAction(T enteredState, T fromState, Action entryAction)
         {
-            var state = GetState(enteredState);
-            state.AddEntryAction(fromState, entryAction);
+            AddEntryAction(enteredState, fromState, entryAction, null);
         }
 
         /// <summary>
@@ -190,6 +202,9 @@ namespace ReactiveStateMachine
         /// <param name="condition"></param>
         public void AddEntryAction(T enteredState, T fromState, Action entryAction, Func<bool> condition)
         {
+            if (enteredState.Equals(fromState))
+                throw new InvalidOperationException("entry actions are not allowed/executed for internal transitions, i.e. transitions that start and end in the same state");
+
             var state = GetState(enteredState);
             state.AddEntryAction(fromState, entryAction, condition);
         }
@@ -205,8 +220,7 @@ namespace ReactiveStateMachine
         /// <param name="exitAction"></param>
         public void AddExitAction(T currentState, Action exitAction)
         {
-            var state = GetState(currentState);
-            state.AddExitAction(exitAction);
+            AddExitAction(currentState, exitAction, null);
         }
 
         /// <summary>
@@ -229,8 +243,7 @@ namespace ReactiveStateMachine
         /// <param name="exitAction"></param>
         public void AddExitAction(T currentState, T toState, Action exitAction)
         {
-            var state = GetState(currentState);
-            state.AddExitAction(toState, exitAction);
+            AddExitAction(currentState, toState, exitAction, null);
         }
 
         /// <summary>
@@ -242,6 +255,9 @@ namespace ReactiveStateMachine
         /// <param name="condition"></param>
         public void AddExitAction(T currentState, T toState, Action exitAction, Func<bool> condition)
         {
+            if (currentState.Equals(toState))
+                throw new InvalidOperationException("exit actions are not allowed/executed for internal transitions, i.e. transitions that start and end in the same state");
+
             var state = GetState(currentState);
             state.AddExitAction(toState, exitAction, condition);
         }
@@ -324,10 +340,7 @@ namespace ReactiveStateMachine
         {
             var stateObject = GetState(fromState);
 
-            if (stateObject.TimedTransition != null)
-                throw new InvalidOperationException("Timebased Transition has already been set !");
-
-            stateObject.TimedTransition = new TimedTransition<T, object>(fromState, toState, after, o => condition(), o => transitionAction());
+            stateObject.AddTimedTransition(new TimedTransition<T, object>(fromState, toState, after, o => condition(), o => transitionAction()));
         }
 
         #endregion
@@ -359,10 +372,15 @@ namespace ReactiveStateMachine
         {
             var stateObject = GetState(fromState);
 
-            if (stateObject.AutomaticTransition != null)
-                throw new InvalidOperationException("Automatic Transition has already been set !");
+            Func<object, bool> realCondition = null;
+            if (condition != null)
+                realCondition = o => condition();
 
-            stateObject.AutomaticTransition = new Transition<T, object>(fromState, toState, o => condition(), o => transitionAction());
+            Action<object> realAction = null;
+            if (transitionAction != null)
+                realAction = o => transitionAction();
+
+            stateObject.AddAutomaticTransition(new Transition<T, object>(fromState, toState, realCondition, realAction));
         }
 
         #endregion
@@ -444,18 +462,18 @@ namespace ReactiveStateMachine
             if (!isInternalTransition)
             {
                 futureState.Enter(fromState);
+                futureState.ResumeTransitions();
             }
 
             CurrentState = toState;
 
+            RaiseStateChanged(fromState, toState);
+
+            //TODO: add mechanism which waits for a potential VSM animation to complete. Only start the automatic transition, when the VSM animation is completed.
+
             //add an automatic transition to the queue, if available
             if (futureState.TryAutomaticTransition())
                 return;
-
-            if(!isInternalTransition)
-                futureState.ResumeTransitions();
-
-            futureState.StartTimeBasedTransition();
         }
 
         internal void EnqueueTransition(Action transition)

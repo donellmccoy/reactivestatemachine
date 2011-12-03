@@ -2,13 +2,12 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using Microsoft.Surface.Presentation;
 using ReactiveStateMachine;
 
 namespace TouchStateMachine
 {
-    public class SurfaceTouchTracker : IInputPointTracker
+    public class SurfaceTouchTracker : ITouchTracker
     {
         private static PropertyInfo _inputArgsProperty;
         private static PropertyInfo _inputRecordProperty;

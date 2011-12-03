@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using ReactiveStateMachine.Triggers;
 
 namespace ReactiveStateMachine.Transitions
 {
-    internal class TriggeredTransition<T, TTrigger> : Transition<T, TTrigger> where TTrigger:class
+    internal class TriggeredTransition<T, TTrigger> : Transition<T, TTrigger>
     {
         public TriggeredTransition(T fromState, T toState, Trigger<TTrigger> trigger, Action<TTrigger> transitionAction, Func<TTrigger, bool> condition) : base(fromState, toState, condition, transitionAction)
         {
