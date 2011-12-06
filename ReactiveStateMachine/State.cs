@@ -146,7 +146,7 @@ namespace ReactiveStateMachine
             foreach (var timedTransition in _timedTransitions)
             {
                 TimedTransition<T, object> transition = timedTransition;
-                var subscription = Observable.Return<object>(null).Delay(timedTransition.After).Where(args => _stateMachine.CurrentState.Equals(StateRepresentation)).Subscribe(args => _stateMachine.EnqueueTransition(() => _stateMachine.TransitionStateInternal(StateRepresentation, transition.ToState, args, transition.TransitionAction)));
+                var subscription = Observable.Return<object>(null).Delay(timedTransition.After).Where(args => _stateMachine.CurrentState.Equals(StateRepresentation)).Where(args => transition.Condition == null || transition.Condition(args)).Subscribe(args => _stateMachine.EnqueueTransition(() => _stateMachine.TransitionStateInternal(StateRepresentation, transition.ToState, args, transition.TransitionAction)));
                 _currentSubscriptions.Add(subscription);
             }
         }

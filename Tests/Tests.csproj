@@ -88,6 +88,8 @@
     <Compile Include="ExitActionTests.cs" />
     <Compile Include="LifetimeTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TransitionActionTests.cs" />
+    <Compile Include="TransitionTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
