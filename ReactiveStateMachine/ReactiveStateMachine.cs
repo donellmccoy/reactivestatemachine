@@ -340,7 +340,16 @@ namespace ReactiveStateMachine
         {
             var stateObject = GetState(fromState);
 
-            stateObject.AddTimedTransition(new TimedTransition<T, object>(fromState, toState, after, o => condition(), o => transitionAction()));
+            Func<object, bool> realCondition = null;
+            if (condition != null)
+                realCondition = o => condition();
+
+            Action<object> realAction = null;
+            if (transitionAction != null)
+                realAction = o => transitionAction();
+
+
+            stateObject.AddTimedTransition(new TimedTransition<T, object>(fromState, toState, after, realCondition, realAction));
         }
 
         #endregion
