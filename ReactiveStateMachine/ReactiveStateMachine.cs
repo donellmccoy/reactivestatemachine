@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 using ReactiveStateMachine.Transitions;
 using ReactiveStateMachine.Triggers;
 
@@ -25,13 +26,19 @@ namespace ReactiveStateMachine
 
         private bool _running;
 
+        internal Dispatcher CurrentDispatcher { get; private set; }
+
         #endregion
 
         #region ctor
 
-        public ReactiveStateMachine(T startState)
+        public ReactiveStateMachine(String name, T startState)
         {
+            Name = name;
             StartState = startState;
+            
+            if(Thread.CurrentThread.GetApartmentState() == ApartmentState.STA)
+                CurrentDispatcher = Dispatcher.CurrentDispatcher;
         }
 
         #endregion
@@ -92,16 +99,19 @@ namespace ReactiveStateMachine
             set;
         }
 
-        public void ExternalStateChanged(string fromState, string toState)
-        {
-            throw new NotImplementedException();
-        }
+        #endregion
+
+        #region Name
+
+        public String Name { get; private set; }
 
         #endregion
 
         #endregion
 
         #region public events
+
+        #region State Changed
 
         public event EventHandler<StateChangedEventArgs<T>> StateChanged;
 
@@ -115,6 +125,49 @@ namespace ReactiveStateMachine
         {
             RaiseStateChanged(new StateChangedEventArgs<T>(fromState, toState));
         }
+
+        #endregion
+
+        #region State Machine Started
+
+        public event EventHandler StateMachineStarted;
+
+        private void RaiseStateMachineStarted()
+        {
+            EventHandler handler = StateMachineStarted;
+            if (handler != null) handler(this, EventArgs.Empty);
+        }
+
+        #endregion
+
+        #region State Machine Stopped
+
+        public event EventHandler StateMachineStopped;
+
+        private void RaiseStateMachineStopped()
+        {
+            EventHandler handler = StateMachineStopped;
+            if (handler != null) handler(this, EventArgs.Empty);
+        }
+
+        #endregion
+
+        #region State Machine Exception
+
+        public event EventHandler<StateMachineExceptionEventArgs> StateMachineException;
+
+        private void RaiseStateMachineException(Exception e)
+        {
+            RaiseStateMachineException(new StateMachineExceptionEventArgs(e));
+        }
+
+        private void RaiseStateMachineException(StateMachineExceptionEventArgs e)
+        {
+            EventHandler<StateMachineExceptionEventArgs> handler = StateMachineException;
+            if (handler != null) handler(this, e);
+        }
+
+        #endregion
 
         #endregion
 
@@ -152,6 +205,8 @@ namespace ReactiveStateMachine
 
             while (!_queue.IsCompleted)
                 Thread.Sleep(10);
+
+            RaiseStateMachineStopped();
         }
 
         #endregion
@@ -312,16 +367,16 @@ namespace ReactiveStateMachine
 
         #endregion
 
-        #region Time-based Transitions
+        #region Timed Transitions
 
-        public void AddTransition(T fromState, T toState, TimeSpan after)
+        public void AddTimedTransition(T fromState, T toState, TimeSpan after)
         {
-            AddTransition(fromState, toState, after, null, null);
+            AddTimedTransition(fromState, toState, after, null, null);
         }
 
-        public void AddTransition(T fromState, T toState, TimeSpan after, Func<bool> condition)
+        public void AddTimedTransition(T fromState, T toState, TimeSpan after, Func<bool> condition)
         {
-            AddTransition(fromState, toState, after, condition, null);
+            AddTimedTransition(fromState, toState, after, condition, null);
         }
         
         /// <summary>
@@ -331,12 +386,12 @@ namespace ReactiveStateMachine
         /// <param name="toState"></param>
         /// <param name="after"></param>
         /// <param name="transitionAction"></param>
-        public void AddTransition(T fromState, T toState, TimeSpan after, Action transitionAction)
+        public void AddTimedTransition(T fromState, T toState, TimeSpan after, Action transitionAction)
         {
-            AddTransition(fromState, toState, after, null, transitionAction);
+            AddTimedTransition(fromState, toState, after, null, transitionAction);
         }
 
-        public void AddTransition(T fromState, T toState, TimeSpan after, Func<bool> condition, Action transitionAction)
+        public void AddTimedTransition(T fromState, T toState, TimeSpan after, Func<bool> condition, Action transitionAction)
         {
             var stateObject = GetState(fromState);
 
@@ -438,20 +493,33 @@ namespace ReactiveStateMachine
             
             CurrentState = StartState;
 
+            RaiseStateMachineStarted();
+
             if (state.TryAutomaticTransition())
                 return;
 
             state.ResumeTransitions();
         }
 
+        #endregion
+
+        #region internal methods
+        
         internal void TransitionStateInternal<TTrigger>(T fromState, T toState, TTrigger trigger, Action<TTrigger> transitionAction)
         {
             TransitionOverride(trigger);
 
-            var isInternalTransition = fromState.Equals(toState);
-
             if (!CurrentState.Equals(fromState))
                 return;
+
+            var isInternalTransition = fromState.Equals(toState);
+
+            Task<bool> vsmTransition = null;
+
+            if (!isInternalTransition && AssociatedVisualStateManager != null)
+            {
+                vsmTransition = AssociatedVisualStateManager.TransitionState(Name, fromState.ToString(), toState.ToString());
+            }
 
             var currentState = GetState(fromState);
             var futureState = GetState(toState);
@@ -465,7 +533,19 @@ namespace ReactiveStateMachine
 
             //transition from old state to new
             if (transitionAction != null)
-                transitionAction(trigger);
+            {
+                try
+                {
+                    if (CurrentDispatcher != null)
+                        CurrentDispatcher.Invoke(transitionAction, trigger);
+                    else
+                        transitionAction(trigger);
+                }
+                catch (Exception e)
+                {
+                    RaiseStateMachineException(e);
+                }
+            }
 
             //enter the next state
             if (!isInternalTransition)
@@ -478,11 +558,10 @@ namespace ReactiveStateMachine
 
             RaiseStateChanged(fromState, toState);
 
-            //TODO: add mechanism which waits for a potential VSM animation to complete. Only start the automatic transition, when the VSM animation is completed.
-
-            //add an automatic transition to the queue, if available
-            if (futureState.TryAutomaticTransition())
-                return;
+            if (vsmTransition == null || vsmTransition.IsCompleted)
+                futureState.TryAutomaticTransition();
+            else
+                vsmTransition.ContinueWith(result => futureState.TryAutomaticTransition());
         }
 
         internal void EnqueueTransition(Action transition)

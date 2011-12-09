@@ -56,6 +56,7 @@
     <Compile Include="IIgnoringObservable.cs" />
     <Compile Include="ObservableExtensions.cs" />
     <Compile Include="StateChangedEventArgs.cs" />
+    <Compile Include="StateMachineExceptionEventArgs.cs" />
     <Compile Include="TrackingStateMachine.cs" />
     <Compile Include="Transitions\TimedTransition.cs" />
     <Compile Include="Transitions\Transition.cs" />

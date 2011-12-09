@@ -13,7 +13,7 @@ namespace Tests
         [Test]
         public void SingleExitActionIsCalled()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var exitActionCalled = false;
 
             Action exitAction = () => exitActionCalled = true;
@@ -37,7 +37,7 @@ namespace Tests
         [Test]
         public void MultipleExitActionsAreCalled()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             const int numExitActionsToCall = 10;
             var numExitActionsCalled = 0;
 
@@ -65,7 +65,7 @@ namespace Tests
         [Test]
         public void ConditionalExitActionIsCalled()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var exitActionCalled = false;
 
             Action exitAction = () => exitActionCalled = true;
@@ -89,7 +89,7 @@ namespace Tests
         [Test]
         public void ConditionalExitActionIsNotCalled()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var exitActionCalled = false;
 
             Action exitAction = () => exitActionCalled = true;
@@ -113,7 +113,7 @@ namespace Tests
         [Test]
         public void ExitActionIsCalledOnSpecificTransition()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var exitActionCalled = false;
 
             Action exitAction = () => exitActionCalled = true;
@@ -137,7 +137,7 @@ namespace Tests
         [Test]
         public void ExitActionIsNotCalledOnOtherTransitions()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var exitActionCalled = false;
 
             Action exitAction = () => exitActionCalled = true;

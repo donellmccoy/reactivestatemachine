@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using System.Windows;
 
 namespace ReactiveStateMachine
@@ -55,18 +57,19 @@ namespace ReactiveStateMachine
             return group.Transitions.OfType<VisualTransition>().Where(t => t.From == fromState && t.To == toState).SingleOrDefault();
         }
 
-        internal bool TriggerStateChange(String groupName, String fromState, String toState)
+        internal Task<bool> TransitionState(String groupName, String fromState, String toState)
         {
+            return Task.Factory.StartNew(() => TransitionStateInternal(groupName, fromState, toState));
+        }
+
+        internal bool TransitionStateInternal(String groupName, String fromState, String toState)
+        {
+            var waitHandle = new ManualResetEventSlim();
             #if DEBUG
             Console.WriteLine("VSM: Transitioning " + groupName + " from " + fromState + " to " + toState);
             #endif
 
             if (TargetControl == null)
-                return false;
-
-            IReactiveStateMachine currentMachine = null;
-
-            if (!_mappings.TryGetValue(groupName, out currentMachine))
                 return false;
 
             if (_currentStateChangedSubscription != null)
@@ -87,7 +90,7 @@ namespace ReactiveStateMachine
                     #if DEBUG
                     Console.WriteLine("Storyboard.Completed (" + fromState + " --> " + toState + ")\t");
                     #endif
-                    currentMachine.ExternalStateChanged(fromState, toState);
+                    waitHandle.Set();
                 });
             }
             else
@@ -98,11 +101,15 @@ namespace ReactiveStateMachine
                     #if DEBUG
                     Console.WriteLine("VisualStateGroup.CurrentStateChanged (" + fromState + " --> " + toState + ")\t");
                     #endif
-                    currentMachine.ExternalStateChanged((evt.EventArgs.OldState != null) ? evt.EventArgs.OldState.Name : "", evt.EventArgs.NewState.Name);
+                    waitHandle.Set();
                 });
             }
 
-            return base.GoToStateCore(null, TargetControl, toState, group, targetState, true);
+            var result = base.GoToStateCore(null, TargetControl, toState, group, targetState, true);
+
+            waitHandle.Wait();
+
+            return result;
         }
 
         internal void AddMapping(String groupName, IReactiveStateMachine stateMachine)

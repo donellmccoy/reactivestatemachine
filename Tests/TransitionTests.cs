@@ -20,7 +20,7 @@ namespace Tests
         [Test]
         public void AutomaticTransitionIsMade()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var transitionMade = false;
 
             StateMachine.AddAutomaticTransition(TestStates.Collapsed, TestStates.FadingIn);
@@ -42,7 +42,7 @@ namespace Tests
         [Test]
         public void AutomaticTransitionWithConditionIsMade()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var transitionMade = false;
 
             StateMachine.AddAutomaticTransition(TestStates.Collapsed, TestStates.FadingIn, () => true);
@@ -64,7 +64,7 @@ namespace Tests
         [Test]
         public void AutomaticTransitionWithConditionIsNotMade()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var transitionMade = false;
 
             StateMachine.AddAutomaticTransition(TestStates.Collapsed, TestStates.FadingIn, () => false);
@@ -91,7 +91,7 @@ namespace Tests
         public void TriggerdTransitionIsMade()
         {
             var trigger = new Subject<Object>();
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var transitionMade = false;
 
             StateMachine.AddTransition(TestStates.Collapsed, TestStates.FadingIn, trigger);
@@ -120,7 +120,7 @@ namespace Tests
         public void TriggerdTransitionWithConditionIsMade()
         {
             var trigger = new Subject<Object>();
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var transitionMade = false;
 
             StateMachine.AddTransition(TestStates.Collapsed, TestStates.FadingIn, trigger, args => true);
@@ -149,7 +149,7 @@ namespace Tests
         public void TriggerdTransitionWithConditionIsNotMade()
         {
             var trigger = new Subject<Object>();
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var transitionMade = false;
 
             StateMachine.AddTransition(TestStates.Collapsed, TestStates.FadingIn, trigger, args => false);
@@ -181,10 +181,10 @@ namespace Tests
         [Test]
         public void TimedTransitionIsMade()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var transitionMade = false;
 
-            StateMachine.AddTransition(TestStates.Collapsed, TestStates.FadingIn, TimeSpan.FromMilliseconds(1000));
+            StateMachine.AddTimedTransition(TestStates.Collapsed, TestStates.FadingIn, TimeSpan.FromMilliseconds(1000));
 
             _stateChangedSubscription = StateChanged.Where(args => args.ToState == TestStates.FadingIn).Subscribe(args =>
             {
@@ -203,10 +203,10 @@ namespace Tests
         [Test]
         public void TimedTransitionWithConditionIsMade()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var transitionMade = false;
 
-            StateMachine.AddTransition(TestStates.Collapsed, TestStates.FadingIn, TimeSpan.FromMilliseconds(1000), () => true);
+            StateMachine.AddTimedTransition(TestStates.Collapsed, TestStates.FadingIn, TimeSpan.FromMilliseconds(1000), () => true);
 
             _stateChangedSubscription = StateChanged.Where(args => args.ToState == TestStates.FadingIn).Subscribe(args =>
             {
@@ -225,10 +225,10 @@ namespace Tests
         [Test]
         public void TimedTransitionWithConditionIsNotMade()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var transitionMade = false;
 
-            StateMachine.AddTransition(TestStates.Collapsed, TestStates.FadingIn, TimeSpan.FromMilliseconds(1000), () => false);
+            StateMachine.AddTimedTransition(TestStates.Collapsed, TestStates.FadingIn, TimeSpan.FromMilliseconds(1000), () => false);
 
             _stateChangedSubscription = StateChanged.Where(args => args.ToState == TestStates.FadingIn).Subscribe(args =>
             {

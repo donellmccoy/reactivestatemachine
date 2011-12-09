@@ -21,7 +21,7 @@ namespace Tests
 
         [Test]
         public void CurrentStateEqualsStartStateAfterStart()
-        {
+        {   
             StateMachine.Start();
 
             //TODO: wait for the StateChangedEvent to occur

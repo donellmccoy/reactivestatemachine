@@ -72,19 +72,26 @@
     <Reference Include="pnunit.framework">
       <HintPath>..\packages\NUnit.2.5.10.11092\lib\pnunit.framework.dll</HintPath>
     </Reference>
+    <Reference Include="PresentationCore" />
+    <Reference Include="PresentationFramework" />
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Reactive, Version=1.0.10621.0, Culture=neutral, PublicKeyToken=31bf3856ad364e35, processorArchitecture=MSIL" />
+    <Reference Include="System.Xaml" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
     <Reference Include="System.Data" />
     <Reference Include="System.Xml" />
+    <Reference Include="WindowsBase" />
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AbstractReactiveStateMachineTest.cs" />
     <Compile Include="ConfigurationTests.cs" />
+    <Compile Include="DispatcherHelper.cs" />
+    <Compile Include="DispatcherTests.cs" />
     <Compile Include="EntryActionTests.cs" />
+    <Compile Include="ExceptionTests.cs" />
     <Compile Include="ExitActionTests.cs" />
     <Compile Include="LifetimeTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

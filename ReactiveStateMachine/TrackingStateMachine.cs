@@ -6,7 +6,7 @@ namespace ReactiveStateMachine
     {
         protected IInputPointTracker InputTracker {get; private set;}
 
-        public TrackingStateMachine(T startState, IInputPointTracker inputTracker) : base(startState)
+        public TrackingStateMachine(String name, T startState, IInputPointTracker inputTracker) : base(name, startState)
         {
             if (inputTracker == null)
                 throw new ArgumentNullException("inputTracker");

@@ -13,7 +13,7 @@ namespace Tests
         [Test]
         public void SingleEntryActionIsCalled()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var entryActionCalled = false;
 
             Action entryAction = () => entryActionCalled = true;
@@ -37,7 +37,7 @@ namespace Tests
         [Test]
         public void MultipleEntryActionsAreCalled()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             const int numEntryActionsToCall = 10;
             var numEntryActionsCalled = 0;
 
@@ -65,7 +65,7 @@ namespace Tests
         [Test]
         public void ConditionalEntryActionIsCalled()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var entryActionCalled = false;
 
             Action entryAction = () => entryActionCalled = true;
@@ -89,7 +89,7 @@ namespace Tests
         [Test]
         public void ConditionalEntryActionIsNotCalled()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var entryActionCalled = false;
 
             Action entryAction = () => entryActionCalled = true;
@@ -113,7 +113,7 @@ namespace Tests
         [Test]
         public void EntryActionIsCalledOnSpecificTransition()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var entryActionCalled = false;
 
             Action entryAction = () => entryActionCalled = true;
@@ -137,7 +137,7 @@ namespace Tests
         [Test]
         public void EntryActionIsNotCalledOnOtherTransitions()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var entryActionCalled = false;
 
             Action entryAction = () => entryActionCalled = true;

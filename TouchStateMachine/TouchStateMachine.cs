@@ -1,15 +1,16 @@
-﻿using ReactiveStateMachine;
+﻿using System;
+using ReactiveStateMachine;
 
 namespace TouchStateMachine
 {
     public class TouchStateMachine<T> : TrackingStateMachine<T>
     {
-        public TouchStateMachine(T startState) : this(startState, new WindowsTouchTracker())
+        public TouchStateMachine(String name, T startState) : this(name, startState, new WindowsTouchTracker())
         {
             
         }
 
-        public TouchStateMachine(T startState, ITouchTracker inputTracker) : base(startState, inputTracker)
+        public TouchStateMachine(String name, T startState, ITouchTracker inputTracker) : base(name, startState, inputTracker)
         {
             
         }

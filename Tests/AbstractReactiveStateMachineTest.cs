@@ -35,7 +35,7 @@ namespace Tests
         [SetUp]
         public void SetUpReactiveStateMachineTest()
         {
-            StateMachine = new ReactiveStateMachine<TestStates>(TestStates.Collapsed);
+            StateMachine = new ReactiveStateMachine<TestStates>("TestStateMachine", TestStates.Collapsed);
             StateChanged = Observable.FromEventPattern<StateChangedEventArgs<TestStates>>(StateMachine, "StateChanged").Select(evt => evt.EventArgs);
         }
 

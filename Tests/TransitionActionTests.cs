@@ -21,7 +21,7 @@ namespace Tests
         [Test]
         public void TransitionActionOfAutomaticTransitionIsCalled()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var transitionActionCalled = false;
 
             Action transitionAction = () => transitionActionCalled = true;
@@ -44,7 +44,7 @@ namespace Tests
         [Test]
         public void TransitionActionOfAutomaticTransitionWithConditionIsCalled()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var transitionActionCalled = false;
 
             Action transitionAction = () => transitionActionCalled = true;
@@ -67,7 +67,7 @@ namespace Tests
         [Test]
         public void TransitionActionOfAutomaticTransitionWithConditionIsNotCalled()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var transitionActionCalled = false;
 
             Action transitionAction = () => transitionActionCalled = true;
@@ -95,7 +95,7 @@ namespace Tests
         public void TransitionActionOfTriggeredTransitionIsCalled()
         {
             var trigger = new Subject<object>();
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var transitionActionCalled = false;
 
             Action<object> transitionAction = u => transitionActionCalled = true;
@@ -125,7 +125,7 @@ namespace Tests
         public void TransitionActionOfTriggeredTransitionWithConditionIsCalled()
         {
             var trigger = new Subject<object>();
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var transitionActionCalled = false;
 
             Action<object> transitionAction = u => transitionActionCalled = true;
@@ -155,7 +155,7 @@ namespace Tests
         public void TransitionActionOfTriggeredTransitionWithConditionIsNotCalled()
         {
             var trigger = new Subject<object>();
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var transitionActionCalled = false;
 
             Action<object> transitionAction = u => transitionActionCalled = true;
@@ -188,12 +188,12 @@ namespace Tests
         [Test]
         public void TransitionActionOfTimedTransitionIsCalled()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var transitionActionCalled = false;
 
             Action transitionAction = () => transitionActionCalled = true;
 
-            StateMachine.AddTransition(TestStates.Collapsed, TestStates.FadingIn, TimeSpan.FromMilliseconds(1000), transitionAction);
+            StateMachine.AddTimedTransition(TestStates.Collapsed, TestStates.FadingIn, TimeSpan.FromMilliseconds(1000), transitionAction);
 
             _stateChangedSubscription = StateChanged.Where(args => args.ToState == TestStates.FadingIn).Subscribe(args =>
             {
@@ -211,12 +211,12 @@ namespace Tests
         [Test]
         public void TransitionActionOfTimedTransitionWithConditionIsCalled()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var transitionActionCalled = false;
 
             Action transitionAction = () => transitionActionCalled = true;
 
-            StateMachine.AddTransition(TestStates.Collapsed, TestStates.FadingIn, TimeSpan.FromMilliseconds(1000), () => true, transitionAction);
+            StateMachine.AddTimedTransition(TestStates.Collapsed, TestStates.FadingIn, TimeSpan.FromMilliseconds(1000), () => true, transitionAction);
 
             _stateChangedSubscription = StateChanged.Where(args => args.ToState == TestStates.FadingIn).Subscribe(args =>
             {
@@ -234,12 +234,12 @@ namespace Tests
         [Test]
         public void TransitionActionOfTimedTransitionWithConditionIsNotCalled()
         {
-            var evt = new AutoResetEvent(false);
+            var evt = new ManualResetEvent(false);
             var transitionActionCalled = false;
 
             Action transitionAction = () => transitionActionCalled = true;
 
-            StateMachine.AddTransition(TestStates.Collapsed, TestStates.FadingIn, TimeSpan.FromMilliseconds(1000), () => false, transitionAction);
+            StateMachine.AddTimedTransition(TestStates.Collapsed, TestStates.FadingIn, TimeSpan.FromMilliseconds(1000), () => false, transitionAction);
 
             _stateChangedSubscription = StateChanged.Where(args => args.ToState == TestStates.FadingIn).Subscribe(args =>
             {
