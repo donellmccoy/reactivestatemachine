@@ -89,7 +89,26 @@ namespace ReactiveStateMachine
 
             transition.Trigger.Sequence.Subscribe(args =>
             {
-                if (transition.Condition != null && !transition.Condition(args)) return;
+                if (transition.Condition != null)
+                {
+                    try
+                    {
+                        bool success = false;
+
+                        if (_stateMachine.CurrentDispatcher != null)
+                            success = (bool)_stateMachine.CurrentDispatcher.Invoke(transition.Condition, args);
+                        else
+                            success = transition.Condition(args);
+
+                        if(!success)
+                            return;
+                    }
+                    catch (Exception e)
+                    {
+                        _stateMachine.RaiseStateMachineException(e);
+                        return;
+                    }
+                }
 
                 Action action = () => _stateMachine.TransitionStateInternal(transition.FromState, transition.ToState, args, transition.TransitionAction);
 
@@ -146,7 +165,35 @@ namespace ReactiveStateMachine
             foreach (var timedTransition in _timedTransitions)
             {
                 TimedTransition<T, object> transition = timedTransition;
-                var subscription = Observable.Return<object>(null).Delay(timedTransition.After).Where(args => _stateMachine.CurrentState.Equals(StateRepresentation)).Where(args => transition.Condition == null || transition.Condition(args)).Subscribe(args => _stateMachine.EnqueueTransition(() => _stateMachine.TransitionStateInternal(StateRepresentation, transition.ToState, args, transition.TransitionAction)));
+                var subscription = Observable.Return<object>(null).Delay(timedTransition.After).
+                    Where(args => _stateMachine.CurrentState.Equals(StateRepresentation)).
+                    Subscribe(args =>
+                    {
+                        if (transition.Condition != null)
+                        {
+                            try
+                            {
+                                bool success;
+                                if (_stateMachine.CurrentDispatcher != null)
+                                {
+                                    success = (bool) _stateMachine.CurrentDispatcher.Invoke(transition.Condition, args);
+                                }
+                                else
+                                {
+                                    success = transition.Condition(args);
+                                }
+                                if (!success)
+                                    return;
+                            }
+                            catch (Exception e)
+                            {
+                                _stateMachine.RaiseStateMachineException(e);
+                                return;
+                            }
+                        }
+
+                        _stateMachine.EnqueueTransition(() => _stateMachine.TransitionStateInternal(StateRepresentation, transition.ToState, args, transition.TransitionAction));
+                    });
                 _currentSubscriptions.Add(subscription);
             }
         }

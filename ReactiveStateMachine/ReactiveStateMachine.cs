@@ -156,7 +156,7 @@ namespace ReactiveStateMachine
 
         public event EventHandler<StateMachineExceptionEventArgs> StateMachineException;
 
-        private void RaiseStateMachineException(Exception e)
+        internal void RaiseStateMachineException(Exception e)
         {
             RaiseStateMachineException(new StateMachineExceptionEventArgs(e));
         }
@@ -438,7 +438,12 @@ namespace ReactiveStateMachine
 
             Func<object, bool> realCondition = null;
             if (condition != null)
-                realCondition = o => condition();
+                realCondition = o =>
+                {
+                    if (CurrentDispatcher != null)
+                        return (bool)CurrentDispatcher.Invoke(condition, null);
+                    return condition();
+                };
 
             Action<object> realAction = null;
             if (transitionAction != null)
@@ -493,12 +498,10 @@ namespace ReactiveStateMachine
             
             CurrentState = StartState;
 
+            if (!state.TryAutomaticTransition())
+                state.ResumeTransitions();
+            
             RaiseStateMachineStarted();
-
-            if (state.TryAutomaticTransition())
-                return;
-
-            state.ResumeTransitions();
         }
 
         #endregion

@@ -35,17 +35,20 @@ namespace Example
         public TouchStateMachine<VisibilityStates> StateMachine { get; set; }
 
 
-        private ObservableTrigger<ContactEventArgs> _contactDownTrigger;
-        private ObservableTrigger<ContactEventArgs> _contactUpTrigger;
+        private EventTrigger<ContactEventArgs> _contactDownTrigger;
+        private EventTrigger<ContactEventArgs> _contactUpTrigger;
 
         void Window1_Loaded(object sender, RoutedEventArgs e)
         {
-            _contactDownTrigger = new ObservableTrigger<ContactEventArgs>(Observable.FromEventPattern<ContactEventArgs>(this, "ContactDown").Select(evt => evt.EventArgs));
-            _contactUpTrigger = new ObservableTrigger<ContactEventArgs>(Observable.FromEventPattern<ContactEventArgs>(this, "ContactUp").Select(evt => evt.EventArgs));
+            _contactDownTrigger = new EventTrigger<ContactEventArgs>(this, "ContactDown");
+            
+            _contactUpTrigger = new EventTrigger<ContactEventArgs>(this, "ContactUp");
 
-            StateMachine.AddTransition(VisibilityStates.Collapsed, VisibilityStates.Visible, _contactDownTrigger, null);
-            StateMachine.AddTransition(VisibilityStates.Visible, VisibilityStates.Collapsed, _contactUpTrigger, args => StateMachine.TouchCount == 0, null);
+            StateMachine.AddTransition(VisibilityStates.Visible, VisibilityStates.Collapsed, _contactUpTrigger, args => StateMachine.TouchCount == 0, args => Contacts.ReleaseContactCapture(args.Contact));
+            
 
+            //StateMachine.AddTransition(VisibilityStates.Collapsed, VisibilityStates.Visible, _contactDownTrigger, null);
+            
             StateMachine.Start();
         }
     }
