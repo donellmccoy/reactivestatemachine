@@ -229,77 +229,7 @@ namespace Tests
 
         
 
-        [Test]
-        public void ExitActionCanAccessDispatcher()
-        {
-            var evt = new ManualResetEvent(false);
-
-            StateMachine = new ReactiveStateMachine.ReactiveStateMachine<TestStates>("TestMachine", TestStates.Collapsed);
-            var dispatcherObject = new Window();
-
-            var exception = false;
-
-            var exitAction = new Action(() => dispatcherObject.Dispatcher.VerifyAccess());
-
-            StateMachine.AddAutomaticTransition(TestStates.Collapsed, TestStates.FadingIn);
-            StateMachine.AddExitAction(TestStates.Collapsed, exitAction);
-
-            StateMachine.StateMachineException += (sender, args) =>
-            {
-                exception = true;
-                evt.Set();
-            };
-
-            StateMachine.StateChanged += (sender, args) => evt.Set();
-
-            StateMachine.Start();
-
-            while (!evt.WaitOne(50))
-            {
-                DispatcherHelper.DoEvents();
-            }
-
-            Assert.False(exception);
-        }
-
-        [Test]
-        public void ConditionOfExitActionCanAccessDispatcher()
-        {
-            var evt = new ManualResetEvent(false);
-
-            StateMachine = new ReactiveStateMachine.ReactiveStateMachine<TestStates>("TestMachine", TestStates.Collapsed);
-            var dispatcherObject = new Window();
-
-            var exception = false;
-
-            var exitAction = new Action(() => evt.Set());
-            var condition = new Func<bool>(() =>
-            {
-                dispatcherObject.Dispatcher.VerifyAccess();
-                return true;
-            });
-
-            StateMachine.AddAutomaticTransition(TestStates.Collapsed, TestStates.FadingIn);
-            StateMachine.AddExitAction(TestStates.Collapsed, exitAction, condition);
-
-            StateMachine.StateMachineException += (sender, args) =>
-            {
-                exception = true;
-                evt.Set();
-            };
-
-            StateMachine.StateChanged += (sender, args) => evt.Set();
-
-            StateMachine.Start();
-
-            while (!evt.WaitOne(50))
-            {
-                DispatcherHelper.DoEvents();
-            }
-
-            Assert.False(exception);
-        }
-
+        
         [Test]
         public void StateMachineStartedEventHandlerCanAccessDispatcher()
         {

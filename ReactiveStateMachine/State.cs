@@ -99,27 +99,26 @@ namespace ReactiveStateMachine
                 .Where(tuple => (!tuple.IsReferenceStateSet || tuple.ReferenceState.Equals(toState)))
                 .Where(tuple =>
                 {
-                    if (tuple.Condition != null)
+                    if (tuple.Condition == null)
+                        return true;
+
+                    Func<bool> safeCondition = () =>
                     {
-                        var success = false;
                         try
                         {
-                            if (_stateMachine.CurrentDispatcher != null)
-                            {
-                                success = (bool)_stateMachine.CurrentDispatcher.Invoke(tuple.Condition, null);
-                            }
-                            else
-                            {
-                                success = tuple.Condition();
-                            }
+                            return tuple.Condition();
                         }
                         catch (Exception e)
                         {
                             _stateMachine.RaiseStateMachineException(e);
                         }
-                        return success;
-                    }
-                    return true;
+                        return false;
+                    };
+
+                    if (_stateMachine.CurrentDispatcher != null)
+                        return (bool)_stateMachine.CurrentDispatcher.Invoke(safeCondition, null);
+
+                    return safeCondition();
                 })
                 .Select(tuple => tuple.Action).ToArray();
         }

@@ -1,33 +1,15 @@
 ﻿using System;
 using System.Reactive.Linq;
 using System.Threading;
+using System.Windows;
 using NUnit.Framework;
 
 namespace Tests
 {
-    [TestFixture]
-    public class ExitActionTests : AbstractReactiveStateMachineTest
+    [TestFixture, RequiresSTA]
+    public class ExitActionOnDispatcherTests : AbstractReactiveStateMachineTest
     {
         IDisposable _stateChangedSubscription;
-
-        #region parameter checks
-
-        [Test]
-        public void ThrowsIfActionIsNull()
-        {
-            Assert.Throws<ArgumentNullException>(() => StateMachine.AddEntryAction(TestStates.Collapsed, null));
-            Assert.Throws<ArgumentNullException>(() => StateMachine.AddEntryAction(TestStates.Collapsed, null, () => true));
-            Assert.Throws<ArgumentNullException>(() => StateMachine.AddEntryAction(TestStates.Collapsed, TestStates.FadingIn, null));
-            Assert.Throws<ArgumentNullException>(() => StateMachine.AddEntryAction(TestStates.Collapsed, TestStates.FadingIn, null, () => true));
-        }
-
-        [Test]
-        public void ThrowsIfInternalTransition()
-        {
-            Assert.Throws<InvalidOperationException>(() => StateMachine.AddEntryAction(TestStates.Collapsed, TestStates.Collapsed, () => { }));
-        }
-
-        #endregion
 
         #region single exit action
 
@@ -50,7 +32,8 @@ namespace Tests
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.True(exitActionCalled);
         }
@@ -83,7 +66,8 @@ namespace Tests
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.AreEqual(numExitActionsToCall, numExitActionsCalled);
         }
@@ -119,7 +103,8 @@ namespace Tests
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.AreEqual(numExitActionsToCall, numExitActionsCalled);
         }
@@ -147,7 +132,8 @@ namespace Tests
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.True(exitActionCalled);
         }
@@ -171,7 +157,8 @@ namespace Tests
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.False(exitActionCalled);
         }
@@ -199,7 +186,8 @@ namespace Tests
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.True(exitActionCalled);
         }
@@ -226,7 +214,8 @@ namespace Tests
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.False(exitActionCalled);
         }
@@ -252,7 +241,8 @@ namespace Tests
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.True(exceptionHandledAndReported);
         }
@@ -279,12 +269,62 @@ namespace Tests
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.True(exceptionHandledAndReported);
         }
 
         #endregion
 
+        #region dispatcher access
+
+        [Test]
+        public void ExitActionCanAccessDispatcher()
+        {
+            var evt = new ManualResetEvent(false);
+
+            var dispatcherObject = new Window();
+
+            var exitAction = new Action(() => Assert.DoesNotThrow(() => dispatcherObject.Dispatcher.VerifyAccess()));
+
+            StateMachine.AddAutomaticTransition(TestStates.Collapsed, TestStates.FadingIn);
+            StateMachine.AddExitAction(TestStates.Collapsed, exitAction);
+
+            StateMachine.StateChanged += (sender, args) => evt.Set();
+
+            StateMachine.Start();
+
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
+        }
+
+        [Test]
+        public void ConditionOfExitActionCanAccessDispatcher()
+        {
+            var evt = new ManualResetEvent(false);
+
+            var dispatcherObject = new Window();
+
+            var exitAction = new Action(() => {});
+            
+            var condition = new Func<bool>(() =>
+            {
+                Assert.DoesNotThrow(() => dispatcherObject.Dispatcher.VerifyAccess());
+                return true;
+            });
+
+            StateMachine.AddAutomaticTransition(TestStates.Collapsed, TestStates.FadingIn);
+            StateMachine.AddExitAction(TestStates.Collapsed, exitAction, condition);
+
+            StateMachine.StateChanged += (sender, args) => evt.Set();
+
+            StateMachine.Start();
+
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
+        }
+
+        #endregion
     }
 }
