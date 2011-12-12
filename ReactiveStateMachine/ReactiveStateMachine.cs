@@ -493,12 +493,7 @@ namespace ReactiveStateMachine
 
             Func<object, bool> realCondition = null;
             if (condition != null)
-                realCondition = o =>
-                {
-                    if (CurrentDispatcher != null)
-                        return (bool)CurrentDispatcher.Invoke(condition, null);
-                    return condition();
-                };
+                realCondition = o => condition();
 
             Action<object> realAction = null;
             if (transitionAction != null)

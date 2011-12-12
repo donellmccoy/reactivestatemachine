@@ -1,21 +1,14 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reactive.Linq;
-using System.Reactive.Subjects;
-using System.Text;
 using System.Threading;
-using System.Threading.Tasks;
 using NUnit.Framework;
 
 namespace Tests
 {
     [TestFixture]
-    public class TransitionTests : AbstractReactiveStateMachineTest
+    public class AutomaticTransitionTests : AbstractReactiveStateMachineTest
     {
-        IDisposable _stateChangedSubscription;
-
-        #region Automatic Transitions
+        private IDisposable _stateChangedSubscription;
 
         [Test]
         public void AutomaticTransitionIsMade()
@@ -83,167 +76,117 @@ namespace Tests
             Assert.False(transitionMade);
         }
 
-        #endregion
-
-        #region Triggered Transitions
-
         [Test]
-        public void TriggeredTransitionIsMade()
+        public void TransitionActionOfAutomaticTransitionIsCalled()
         {
-            var trigger = new Subject<Object>();
             var evt = new ManualResetEvent(false);
-            var transitionMade = false;
+            var transitionActionCalled = false;
 
-            StateMachine.AddTransition(TestStates.Collapsed, TestStates.FadingIn, trigger);
+            Action transitionAction = () => transitionActionCalled = true;
+
+            StateMachine.AddAutomaticTransition(TestStates.Collapsed, TestStates.FadingIn, transitionAction);
 
             _stateChangedSubscription = StateChanged.Where(args => args.ToState == TestStates.FadingIn).Subscribe(args =>
             {
-                transitionMade = true;
                 _stateChangedSubscription.Dispose();
                 evt.Set();
             });
 
             StateMachine.Start();
-
-            Task.Factory.StartNew(() =>
-            {
-                Thread.Sleep(1000);
-                trigger.OnNext(null);
-            });
 
             evt.WaitOne();
 
-            Assert.True(transitionMade);
+            Assert.True(transitionActionCalled);
         }
 
         [Test]
-        public void TriggeredTransitionWithConditionIsMade()
+        public void TransitionActionOfAutomaticTransitionWithConditionIsCalled()
         {
-            var trigger = new Subject<Object>();
             var evt = new ManualResetEvent(false);
-            var transitionMade = false;
+            var transitionActionCalled = false;
 
-            StateMachine.AddTransition(TestStates.Collapsed, TestStates.FadingIn, trigger, args => true);
+            Action transitionAction = () => transitionActionCalled = true;
+
+            StateMachine.AddAutomaticTransition(TestStates.Collapsed, TestStates.FadingIn, () => true, transitionAction);
 
             _stateChangedSubscription = StateChanged.Where(args => args.ToState == TestStates.FadingIn).Subscribe(args =>
             {
-                transitionMade = true;
                 _stateChangedSubscription.Dispose();
                 evt.Set();
             });
 
             StateMachine.Start();
-
-            Task.Factory.StartNew(() =>
-            {
-                Thread.Sleep(1000);
-                trigger.OnNext(null);
-            });
 
             evt.WaitOne();
 
-            Assert.True(transitionMade);
+            Assert.True(transitionActionCalled);
         }
 
         [Test]
-        public void TriggeredTransitionWithConditionIsNotMade()
+        public void TransitionActionOfAutomaticTransitionWithConditionIsNotCalled()
         {
-            var trigger = new Subject<Object>();
             var evt = new ManualResetEvent(false);
-            var transitionMade = false;
+            var transitionActionCalled = false;
 
-            StateMachine.AddTransition(TestStates.Collapsed, TestStates.FadingIn, trigger, args => false);
+            Action transitionAction = () => transitionActionCalled = true;
+
+            StateMachine.AddAutomaticTransition(TestStates.Collapsed, TestStates.FadingIn, () => false, transitionAction);
 
             _stateChangedSubscription = StateChanged.Where(args => args.ToState == TestStates.FadingIn).Subscribe(args =>
             {
-                transitionMade = true;
                 _stateChangedSubscription.Dispose();
                 evt.Set();
             });
 
             StateMachine.Start();
-
-            Task.Factory.StartNew(() =>
-            {
-                Thread.Sleep(1000);
-                trigger.OnNext(null);
-            });
 
             evt.WaitOne(2000);
 
-            Assert.False(transitionMade);
+            Assert.False(transitionActionCalled);
         }
 
-        #endregion
-
-        #region Timed Transitions
-
         [Test]
-        public void TimedTransitionIsMade()
+        public void ExceptionInTransitionActionOfAutomaticTransitionIsHandledAndReported()
         {
             var evt = new ManualResetEvent(false);
-            var transitionMade = false;
 
-            StateMachine.AddTimedTransition(TestStates.Collapsed, TestStates.FadingIn, TimeSpan.FromMilliseconds(1000));
+            var exceptionHandledAndReported = false;
 
-            _stateChangedSubscription = StateChanged.Where(args => args.ToState == TestStates.FadingIn).Subscribe(args =>
-            {
-                transitionMade = true;
-                _stateChangedSubscription.Dispose();
-                evt.Set();
-            });
+            var transitionAction = new Action(() => { throw new Exception(); });
+
+            StateMachine.AddAutomaticTransition(TestStates.Collapsed, TestStates.FadingIn, transitionAction);
+
+            StateMachine.StateChanged += (sender, args) => evt.Set();
+            
+            StateMachine.StateMachineException += (sender, args) => exceptionHandledAndReported = true;
 
             StateMachine.Start();
 
             evt.WaitOne();
 
-            Assert.True(transitionMade);
+            Assert.True(exceptionHandledAndReported);
         }
 
         [Test]
-        public void TimedTransitionWithConditionIsMade()
+        public void ExceptionInConditionOfAutomaticTransitionIsHandledAndReported()
         {
             var evt = new ManualResetEvent(false);
-            var transitionMade = false;
 
-            StateMachine.AddTimedTransition(TestStates.Collapsed, TestStates.FadingIn, TimeSpan.FromMilliseconds(1000), () => true);
+            var exceptionHandledAndReported = false;
 
-            _stateChangedSubscription = StateChanged.Where(args => args.ToState == TestStates.FadingIn).Subscribe(args =>
-            {
-                transitionMade = true;
-                _stateChangedSubscription.Dispose();
-                evt.Set();
-            });
+            var condition = new Func<bool>(() => { throw new Exception(); });
+
+            StateMachine.AddAutomaticTransition(TestStates.Collapsed, TestStates.FadingIn, condition);
+
+            StateMachine.StateMachineException += (sender, args) => exceptionHandledAndReported = true;
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            evt.WaitOne(2000);
 
-            Assert.True(transitionMade);
+            Assert.AreEqual(StateMachine.CurrentState,TestStates.Collapsed);
+            Assert.True(exceptionHandledAndReported);
         }
 
-        [Test]
-        public void TimedTransitionWithConditionIsNotMade()
-        {
-            var evt = new ManualResetEvent(false);
-            var transitionMade = false;
-
-            StateMachine.AddTimedTransition(TestStates.Collapsed, TestStates.FadingIn, TimeSpan.FromMilliseconds(1000), () => false);
-
-            _stateChangedSubscription = StateChanged.Where(args => args.ToState == TestStates.FadingIn).Subscribe(args =>
-            {
-                transitionMade = true;
-                _stateChangedSubscription.Dispose();
-                evt.Set();
-            });
-
-            StateMachine.Start();
-
-            evt.WaitOne(3000);
-
-            Assert.False(transitionMade);
-        }
-
-        #endregion
     }
 }

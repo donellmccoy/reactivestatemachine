@@ -176,8 +176,34 @@ namespace ReactiveStateMachine
         {
             foreach (var automaticTransition in _automaticTransitions)
             {
-                //TODO: Add test for condition of automatic transition
-                if (automaticTransition.Condition == null || automaticTransition.Condition(null))
+                bool success;
+
+                if (automaticTransition.Condition == null)
+                    success = true;
+                else
+                {
+                    var automaticTransitionCopy = automaticTransition;
+
+                    Func<bool> safeCondition = () =>
+                    {
+                        try
+                        {
+                            return automaticTransitionCopy.Condition(null);
+                        }
+                        catch (Exception e)
+                        {
+                            _stateMachine.RaiseStateMachineException(e);
+                            return false;
+                        }
+                    };
+
+                    if (_stateMachine.CurrentDispatcher != null)
+                        success = (bool)_stateMachine.CurrentDispatcher.Invoke(safeCondition, null);
+                    else
+                        success = safeCondition();
+                }
+
+                if (success)
                 {
                     _stateMachine.EnqueueTransition(() => _stateMachine.TransitionStateInternal(StateRepresentation, automaticTransition.ToState, null, automaticTransition.TransitionAction));
                     return true;
@@ -246,36 +272,34 @@ namespace ReactiveStateMachine
 
             foreach (var timedTransition in _timedTransitions)
             {
-                TimedTransition<T, object> transition = timedTransition;
+                var timedTransitionCopy = timedTransition;
+                
                 var subscription = Observable.Return<object>(null).Delay(timedTransition.After).
                     Where(args => _stateMachine.CurrentState.Equals(StateRepresentation)).
-                    Subscribe(args =>
+                    Where(args =>
                     {
-                        if (transition.Condition != null)
+                        if (timedTransitionCopy.Condition == null)
+                            return true;
+
+                        var safeCondition = new Func<bool>(() =>
                         {
                             try
                             {
-                                bool success;
-                                if (_stateMachine.CurrentDispatcher != null)
-                                {
-                                    success = (bool) _stateMachine.CurrentDispatcher.Invoke(transition.Condition, args);
-                                }
-                                else
-                                {
-                                    success = transition.Condition(args);
-                                }
-                                if (!success)
-                                    return;
+                                return timedTransitionCopy.Condition(args);
                             }
                             catch (Exception e)
                             {
                                 _stateMachine.RaiseStateMachineException(e);
-                                return;
+                                return false;
                             }
-                        }
-
-                        _stateMachine.EnqueueTransition(() => _stateMachine.TransitionStateInternal(StateRepresentation, transition.ToState, args, transition.TransitionAction));
-                    });
+                        });
+                        
+                        if (_stateMachine.CurrentDispatcher != null)
+                            return (bool)_stateMachine.CurrentDispatcher.Invoke(safeCondition);
+                        
+                        return safeCondition();
+                    }).                    
+                    Subscribe(args => _stateMachine.EnqueueTransition(() => _stateMachine.TransitionStateInternal(StateRepresentation, timedTransitionCopy.ToState, args, timedTransitionCopy.TransitionAction)));
                 _currentSubscriptions.Add(subscription);
             }
         }

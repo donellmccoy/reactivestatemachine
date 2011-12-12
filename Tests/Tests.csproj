@@ -87,18 +87,21 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="AbstractReactiveStateMachineTest.cs" />
+    <Compile Include="AutomaticTransitionTests.cs" />
     <Compile Include="ConfigurationTests.cs" />
+    <Compile Include="AutomaticTransitionOnDispatcherTests.cs" />
+    <Compile Include="TriggeredTransitionOnDispatcherTests.cs" />
+    <Compile Include="TimedTransitionOnDispatcherTests.cs" />
     <Compile Include="ExitActionOnDispatcherTests.cs" />
     <Compile Include="EntryActionOnDispatcherTests.cs" />
     <Compile Include="DispatcherHelper.cs" />
     <Compile Include="DispatcherTests.cs" />
     <Compile Include="EntryActionTests.cs" />
-    <Compile Include="ExceptionTests.cs" />
     <Compile Include="ExitActionTests.cs" />
     <Compile Include="LifetimeTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="TransitionActionTests.cs" />
-    <Compile Include="TransitionTests.cs" />
+    <Compile Include="TimedTransitionTests.cs" />
+    <Compile Include="TriggeredTransitionTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
