@@ -15,11 +15,7 @@ namespace Tests
             Assert.AreEqual(StateMachine.StartState, TestStates.Collapsed);
         }
 
-        [Test]
-        public void EntryActionIsNotAllowedForInternalTransitions()
-        {
-            Assert.Throws<InvalidOperationException>(() => StateMachine.AddEntryAction(TestStates.Collapsed, TestStates.Collapsed, ()=> {}));
-        }
+        
 
     }
 }

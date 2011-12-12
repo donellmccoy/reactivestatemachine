@@ -88,6 +88,7 @@
   <ItemGroup>
     <Compile Include="AbstractReactiveStateMachineTest.cs" />
     <Compile Include="ConfigurationTests.cs" />
+    <Compile Include="EntryActionOnDispatcherTests.cs" />
     <Compile Include="DispatcherHelper.cs" />
     <Compile Include="DispatcherTests.cs" />
     <Compile Include="EntryActionTests.cs" />

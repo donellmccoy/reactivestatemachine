@@ -55,27 +55,26 @@ namespace ReactiveStateMachine
                 Where(tuple => (!tuple.IsReferenceStateSet || tuple.ReferenceState.Equals(fromState))).
                 Where(tuple =>
                 {
-                    if(tuple.Condition != null)
+                    if (tuple.Condition == null)
+                        return true;
+
+                    Func<bool> safeCondition = () =>
                     {
-                        var success = false;
                         try
                         {
-                            if (_stateMachine.CurrentDispatcher != null)
-                            {
-                                success = (bool)_stateMachine.CurrentDispatcher.Invoke(tuple.Condition, null);
-                            }
-                            else
-                            {
-                                success = tuple.Condition();
-                            }
+                            return tuple.Condition();
                         }
                         catch (Exception e)
                         {
                             _stateMachine.RaiseStateMachineException(e);
                         }
-                        return success;
-                    }
-                    return true;
+                        return false;
+                    };
+
+                    if (_stateMachine.CurrentDispatcher != null)
+                        return (bool)_stateMachine.CurrentDispatcher.Invoke(safeCondition, null);
+                        
+                    return safeCondition();
                 })
                 .Select(tuple => tuple.Action).ToArray();
         }
@@ -178,6 +177,7 @@ namespace ReactiveStateMachine
         {
             foreach (var automaticTransition in _automaticTransitions)
             {
+                //TODO: Add test for condition of automatic transition
                 if (automaticTransition.Condition == null || automaticTransition.Condition(null))
                 {
                     _stateMachine.EnqueueTransition(() => _stateMachine.TransitionStateInternal(StateRepresentation, automaticTransition.ToState, null, automaticTransition.TransitionAction));
@@ -191,18 +191,23 @@ namespace ReactiveStateMachine
         {
             foreach (var entryAction in GetValidEntryActions(fromState))
             {
-                try
+                var entryActionCopy = entryAction;
+                Action safeEntryAction = () =>
                 {
-                    if (_stateMachine.CurrentDispatcher != null)
-                        _stateMachine.CurrentDispatcher.Invoke(entryAction);
-                    else
-                        entryAction();
-                }
-                catch (Exception e)
-                {
-                    _stateMachine.RaiseStateMachineException(e);
-                    continue;
-                }
+                    try
+                    {
+                        entryActionCopy();
+                    }
+                    catch (Exception e)
+                    {
+                        _stateMachine.RaiseStateMachineException(e);
+                    }
+                };
+
+                if (_stateMachine.CurrentDispatcher != null)
+                    _stateMachine.CurrentDispatcher.Invoke(safeEntryAction);
+                else
+                    safeEntryAction();
             }
         }
 
@@ -214,18 +219,24 @@ namespace ReactiveStateMachine
 
             foreach (var exitAction in GetValidExitActions(toState))
             {
-                try
+                var exitActionCopy = exitAction;
+
+                Action safeExitAction = () =>
                 {
-                    if (_stateMachine.CurrentDispatcher != null)
-                        _stateMachine.CurrentDispatcher.Invoke(exitAction);
-                    else
-                        exitAction();
-                }
-                catch (Exception e)
-                {
-                    _stateMachine.RaiseStateMachineException(e);
-                    continue;
-                }
+                    try
+                    {
+                        exitActionCopy();
+                    }
+                    catch (Exception e)
+                    {
+                        _stateMachine.RaiseStateMachineException(e);
+                    }
+                };
+
+                if (_stateMachine.CurrentDispatcher != null)
+                    _stateMachine.CurrentDispatcher.Invoke(safeExitAction);
+                else
+                    safeExitAction();
             }
         }
 

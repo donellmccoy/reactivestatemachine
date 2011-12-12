@@ -1,33 +1,15 @@
 ﻿using System;
 using System.Reactive.Linq;
 using System.Threading;
+using System.Windows;
 using NUnit.Framework;
 
 namespace Tests
 {
-    [TestFixture]
-    public class EntryActionTests : AbstractReactiveStateMachineTest
+    [TestFixture, RequiresSTA]
+    public class EntryActionOnDispatcherTests : AbstractReactiveStateMachineTest
     {
         IDisposable _stateChangedSubscription;
-
-        #region parameter checks
-
-        [Test]
-        public void ThrowsIfActionIsNull()
-        {
-            Assert.Throws<ArgumentNullException>(() => StateMachine.AddEntryAction(TestStates.Collapsed, null));
-            Assert.Throws<ArgumentNullException>(() => StateMachine.AddEntryAction(TestStates.Collapsed, null, () => true));
-            Assert.Throws<ArgumentNullException>(() => StateMachine.AddEntryAction(TestStates.Collapsed, TestStates.FadingIn, null));
-            Assert.Throws<ArgumentNullException>(() => StateMachine.AddEntryAction(TestStates.Collapsed, TestStates.FadingIn, null, () => true));
-        }
-
-        [Test]
-        public void ThrowsIfInternalTransition()
-        {
-            Assert.Throws<InvalidOperationException>(() => StateMachine.AddEntryAction(TestStates.Collapsed, TestStates.Collapsed, () => { }));
-        }
-
-        #endregion
 
         #region single entry action
 
@@ -50,10 +32,12 @@ namespace Tests
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.True(entryActionCalled);
         }
+
 
         #endregion
 
@@ -83,7 +67,8 @@ namespace Tests
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.AreEqual(numEntryActionsToCall, numEntryActionsCalled);
         }
@@ -120,7 +105,8 @@ namespace Tests
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.AreEqual(numEntryActionsToCall, numEntryActionsCalled);
         }
@@ -148,7 +134,8 @@ namespace Tests
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.True(entryActionCalled);
         }
@@ -172,7 +159,8 @@ namespace Tests
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.False(entryActionCalled);
         }
@@ -200,7 +188,8 @@ namespace Tests
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.True(entryActionCalled);
         }
@@ -226,7 +215,8 @@ namespace Tests
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.False(entryActionCalled);
         }
@@ -249,7 +239,8 @@ namespace Tests
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.True(entryActionCalled);
         }
@@ -274,7 +265,8 @@ namespace Tests
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.True(exceptionHandledAndReported);
         }
@@ -290,7 +282,7 @@ namespace Tests
             var exceptionHandledAndReported = false;
 
             Action entryAction = () => { };
-            Func<bool> condition = () =>{throw new Exception();};
+            Func<bool> condition = () => { throw new Exception(); };
 
             StateMachine.AddEntryAction(TestStates.Collapsed, entryAction, condition);
 
@@ -300,12 +292,60 @@ namespace Tests
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.True(exceptionHandledAndReported);
         }
 
         #endregion
 
+        #region dispatcher access
+
+        [Test]
+        public void EntryActionCanAccessDispatcher()
+        {
+            var evt = new ManualResetEvent(false);
+
+            var dispatcherObject = new Window();
+
+            var entryAction = new Action(() => Assert.DoesNotThrow(() => dispatcherObject.Dispatcher.VerifyAccess()));
+
+            StateMachine.AddEntryAction(TestStates.Collapsed, entryAction);
+
+            StateMachine.StateMachineStarted += (sender, args) => evt.Set();
+
+            StateMachine.Start();
+
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
+        }
+
+        [Test]
+        public void ConditionOfEntryActionCanAccessDispatcher()
+        {
+            var evt = new ManualResetEvent(false);
+
+            var dispatcherObject = new Window();
+
+            var entryAction = new Action(() => { });
+
+            var condition = new Func<bool>(() =>
+            {
+                Assert.DoesNotThrow(() => dispatcherObject.Dispatcher.VerifyAccess());
+                return true;
+            });
+
+            StateMachine.AddEntryAction(TestStates.Collapsed, entryAction, condition);
+
+            StateMachine.StateMachineStarted += (sender, args) => evt.Set();
+
+            StateMachine.Start();
+
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
+        }
+
+        #endregion        
     }
 }

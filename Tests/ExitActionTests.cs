@@ -11,6 +11,22 @@ namespace Tests
         IDisposable _stateChangedSubscription;
 
         [Test]
+        public void ThrowsIfActionIsNull()
+        {
+            Assert.Throws<ArgumentNullException>(() => StateMachine.AddEntryAction(TestStates.Collapsed, null));
+            Assert.Throws<ArgumentNullException>(() => StateMachine.AddEntryAction(TestStates.Collapsed, null, () => true));
+            Assert.Throws<ArgumentNullException>(() => StateMachine.AddEntryAction(TestStates.Collapsed, TestStates.FadingIn, null));
+            Assert.Throws<ArgumentNullException>(() => StateMachine.AddEntryAction(TestStates.Collapsed, TestStates.FadingIn, null, () => true));
+        }
+
+        [Test]
+        public void ThrowsIfInternalTransition()
+        {
+            Assert.Throws<InvalidOperationException>(() => StateMachine.AddEntryAction(TestStates.Collapsed, TestStates.Collapsed, () => { }));
+        }
+
+
+        [Test]
         public void SingleExitActionIsCalled()
         {
             var evt = new ManualResetEvent(false);

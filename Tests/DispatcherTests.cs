@@ -1,12 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Reactive.Subjects;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
-using System.Windows.Threading;
 using NUnit.Framework;
 
 namespace Tests
@@ -229,74 +225,9 @@ namespace Tests
             Assert.False(exception);
         }
 
-        [Test]
-        public void EntryActionCanAccessDispatcher()
-        {
-            var evt = new ManualResetEvent(false);
+        
 
-            StateMachine = new ReactiveStateMachine.ReactiveStateMachine<TestStates>("TestMachine", TestStates.Collapsed);
-            var dispatcherObject = new Window();
-
-            var exception = false;
-
-            var entryAction = new Action(() => dispatcherObject.Dispatcher.VerifyAccess());
-
-            StateMachine.AddAutomaticTransition(TestStates.Collapsed, TestStates.FadingIn);
-            StateMachine.AddEntryAction(TestStates.FadingIn, entryAction);
-
-            StateMachine.StateMachineException += (sender, args) => { exception = true;
-                                                                        evt.Set();
-            };
-
-            StateMachine.StateChanged += (sender, args) => evt.Set();
-
-            StateMachine.Start();
-
-            while (!evt.WaitOne(50))
-            {
-                DispatcherHelper.DoEvents();
-            }
-
-            Assert.False(exception);
-        }
-
-        [Test]
-        public void ConditionOfEntryActionCanAccessDispatcher()
-        {
-            var evt = new ManualResetEvent(false);
-
-            StateMachine = new ReactiveStateMachine.ReactiveStateMachine<TestStates>("TestMachine", TestStates.Collapsed);
-            var dispatcherObject = new Window();
-
-            var exception = false;
-
-            var entryAction = new Action(() => evt.Set());
-            var condition = new Func<bool>(() =>
-            {
-                dispatcherObject.Dispatcher.VerifyAccess();
-                return true;
-            });
-
-            StateMachine.AddAutomaticTransition(TestStates.Collapsed, TestStates.FadingIn);
-            StateMachine.AddEntryAction(TestStates.FadingIn, entryAction, condition);
-
-            StateMachine.StateMachineException += (sender, args) =>
-            {
-                exception = true;
-                evt.Set();
-            };
-
-            StateMachine.StateChanged += (sender, args) => evt.Set();
-
-            StateMachine.Start();
-
-            while (!evt.WaitOne(50))
-            {
-                DispatcherHelper.DoEvents();
-            }
-
-            Assert.False(exception);
-        }
+        
 
         [Test]
         public void ExitActionCanAccessDispatcher()
