@@ -18,7 +18,7 @@ namespace Tests
         [Test]
         public void EntryActionIsNotAllowedForInternalTransitions()
         {
-            Assert.Throws<InvalidOperationException>(() => StateMachine.AddEntryAction(TestStates.Collapsed, TestStates.Collapsed, null));
+            Assert.Throws<InvalidOperationException>(() => StateMachine.AddEntryAction(TestStates.Collapsed, TestStates.Collapsed, ()=> {}));
         }
 
     }

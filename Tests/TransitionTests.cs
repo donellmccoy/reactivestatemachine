@@ -88,7 +88,7 @@ namespace Tests
         #region Triggered Transitions
 
         [Test]
-        public void TriggerdTransitionIsMade()
+        public void TriggeredTransitionIsMade()
         {
             var trigger = new Subject<Object>();
             var evt = new ManualResetEvent(false);
@@ -117,7 +117,7 @@ namespace Tests
         }
 
         [Test]
-        public void TriggerdTransitionWithConditionIsMade()
+        public void TriggeredTransitionWithConditionIsMade()
         {
             var trigger = new Subject<Object>();
             var evt = new ManualResetEvent(false);
@@ -146,7 +146,7 @@ namespace Tests
         }
 
         [Test]
-        public void TriggerdTransitionWithConditionIsNotMade()
+        public void TriggeredTransitionWithConditionIsNotMade()
         {
             var trigger = new Subject<Object>();
             var evt = new ManualResetEvent(false);

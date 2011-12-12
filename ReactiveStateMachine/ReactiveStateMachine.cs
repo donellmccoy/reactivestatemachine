@@ -12,10 +12,9 @@ namespace ReactiveStateMachine
 {
     /// <summary>
     /// TODO: Add error handling to all observables !
+    /// TODO: All events should be fired on the Dispatcher !
     /// </summary>
     /// <typeparam name="T"></typeparam>
-
-
     public class ReactiveStateMachine<T> : IReactiveStateMachine, INotifyPropertyChanged, IDisposable
     {
         #region private fields
@@ -117,8 +116,16 @@ namespace ReactiveStateMachine
 
         private void RaiseStateChanged(StateChangedEventArgs<T> e)
         {
-            EventHandler<StateChangedEventArgs<T>> handler = StateChanged;
-            if (handler != null) handler(this, e);
+            var handler = StateChanged;
+
+            if (handler == null) return;
+
+            Action action = () => handler(this, e);
+
+            if (CurrentDispatcher != null)
+                CurrentDispatcher.Invoke(action, null);
+            else
+                action();
         }
 
         private void RaiseStateChanged(T fromState, T toState)
@@ -134,8 +141,16 @@ namespace ReactiveStateMachine
 
         private void RaiseStateMachineStarted()
         {
-            EventHandler handler = StateMachineStarted;
-            if (handler != null) handler(this, EventArgs.Empty);
+            var handler = StateMachineStarted;
+
+            if (handler == null) return;
+            
+            Action action = () => handler(this, EventArgs.Empty);
+
+            if (CurrentDispatcher != null)
+                CurrentDispatcher.Invoke(action, null);
+            else
+                action();
         }
 
         #endregion
@@ -146,8 +161,16 @@ namespace ReactiveStateMachine
 
         private void RaiseStateMachineStopped()
         {
-            EventHandler handler = StateMachineStopped;
-            if (handler != null) handler(this, EventArgs.Empty);
+            var handler = StateMachineStopped;
+
+            if (handler == null) return;
+
+            Action action = () => handler(this, EventArgs.Empty);
+
+            if (CurrentDispatcher != null)
+                CurrentDispatcher.Invoke(action, null);
+            else
+                action();
         }
 
         #endregion
@@ -163,8 +186,16 @@ namespace ReactiveStateMachine
 
         private void RaiseStateMachineException(StateMachineExceptionEventArgs e)
         {
-            EventHandler<StateMachineExceptionEventArgs> handler = StateMachineException;
-            if (handler != null) handler(this, e);
+            var handler = StateMachineException;
+
+            if (handler == null) return;
+
+            Action action = () => handler(this, e);
+
+            if (CurrentDispatcher != null)
+                CurrentDispatcher.Invoke(action, null);
+            else
+                action();
         }
 
         #endregion
@@ -222,6 +253,9 @@ namespace ReactiveStateMachine
         /// <param name="entryAction"></param>
         public void AddEntryAction(T enteredState, Action entryAction)
         {
+            if (entryAction == null)
+                throw new ArgumentNullException("entryAction");
+
             AddEntryAction(enteredState, entryAction, null);
         }
 
@@ -233,6 +267,9 @@ namespace ReactiveStateMachine
         /// <param name="condition"></param>
         public void AddEntryAction(T enteredState, Action entryAction, Func<bool> condition)
         {
+            if (entryAction == null)
+                throw new ArgumentNullException("entryAction");
+
             var state = GetState(enteredState);
             state.AddEntryAction(entryAction, condition);
         }
@@ -245,6 +282,9 @@ namespace ReactiveStateMachine
         /// <param name="entryAction"></param>
         public void AddEntryAction(T enteredState, T fromState, Action entryAction)
         {
+            if (entryAction == null)
+                throw new ArgumentNullException("entryAction");
+
             AddEntryAction(enteredState, fromState, entryAction, null);
         }
 
@@ -257,6 +297,9 @@ namespace ReactiveStateMachine
         /// <param name="condition"></param>
         public void AddEntryAction(T enteredState, T fromState, Action entryAction, Func<bool> condition)
         {
+            if (entryAction == null)
+                throw new ArgumentNullException("entryAction");
+
             if (enteredState.Equals(fromState))
                 throw new InvalidOperationException("entry actions are not allowed/executed for internal transitions, i.e. transitions that start and end in the same state");
 
@@ -275,6 +318,9 @@ namespace ReactiveStateMachine
         /// <param name="exitAction"></param>
         public void AddExitAction(T currentState, Action exitAction)
         {
+            if (exitAction == null)
+                throw new ArgumentNullException("exitAction");
+
             AddExitAction(currentState, exitAction, null);
         }
 
@@ -286,6 +332,9 @@ namespace ReactiveStateMachine
         /// <param name="condition"></param>
         public void AddExitAction(T currentState, Action exitAction, Func<bool> condition)
         {
+            if (exitAction == null)
+                throw new ArgumentNullException("exitAction");
+
             var state = GetState(currentState);
             state.AddExitAction(exitAction, condition);
         }
@@ -298,6 +347,9 @@ namespace ReactiveStateMachine
         /// <param name="exitAction"></param>
         public void AddExitAction(T currentState, T toState, Action exitAction)
         {
+            if (exitAction == null)
+                throw new ArgumentNullException("exitAction");
+
             AddExitAction(currentState, toState, exitAction, null);
         }
 
@@ -310,6 +362,9 @@ namespace ReactiveStateMachine
         /// <param name="condition"></param>
         public void AddExitAction(T currentState, T toState, Action exitAction, Func<bool> condition)
         {
+            if (exitAction == null)
+                throw new ArgumentNullException("exitAction");
+
             if (currentState.Equals(toState))
                 throw new InvalidOperationException("exit actions are not allowed/executed for internal transitions, i.e. transitions that start and end in the same state");
 
@@ -534,20 +589,27 @@ namespace ReactiveStateMachine
                 currentState.Exit(toState);
             }
 
-            //transition from old state to new
+            //call the transition action
             if (transitionAction != null)
             {
-                try
+                Action safeAction = () =>
                 {
-                    if (CurrentDispatcher != null)
-                        CurrentDispatcher.Invoke(transitionAction, trigger);
-                    else
+                    try
+                    {
                         transitionAction(trigger);
-                }
-                catch (Exception e)
+                    }
+                    catch (Exception e)
+                    {
+                        RaiseStateMachineException(e);
+                    }
+                };
+
+                if (CurrentDispatcher != null)
                 {
-                    RaiseStateMachineException(e);
+                    CurrentDispatcher.Invoke(safeAction, null);
                 }
+                else
+                    safeAction();
             }
 
             //enter the next state

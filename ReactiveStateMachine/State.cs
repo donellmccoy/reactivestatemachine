@@ -52,8 +52,31 @@ namespace ReactiveStateMachine
         private IEnumerable<Action> GetValidEntryActions(T fromState)
         {
             return _entryActions.
-                Where(tuple => (tuple.Condition == null || tuple.Condition())).
-                Where(tuple => (!tuple.IsReferenceStateSet || tuple.ReferenceState.Equals(fromState)))
+                Where(tuple => (!tuple.IsReferenceStateSet || tuple.ReferenceState.Equals(fromState))).
+                Where(tuple =>
+                {
+                    if(tuple.Condition != null)
+                    {
+                        var success = false;
+                        try
+                        {
+                            if (_stateMachine.CurrentDispatcher != null)
+                            {
+                                success = (bool)_stateMachine.CurrentDispatcher.Invoke(tuple.Condition, null);
+                            }
+                            else
+                            {
+                                success = tuple.Condition();
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            _stateMachine.RaiseStateMachineException(e);
+                        }
+                        return success;
+                    }
+                    return true;
+                })
                 .Select(tuple => tuple.Action).ToArray();
         }
 
@@ -73,9 +96,32 @@ namespace ReactiveStateMachine
 
         public IEnumerable<Action> GetValidExitActions(T toState)
         {
-            return _exitActions.
-                Where(tuple => (tuple.Condition == null || tuple.Condition())).
-                Where(tuple => (!tuple.IsReferenceStateSet || tuple.ReferenceState.Equals(toState)))
+            return _exitActions
+                .Where(tuple => (!tuple.IsReferenceStateSet || tuple.ReferenceState.Equals(toState)))
+                .Where(tuple =>
+                {
+                    if (tuple.Condition != null)
+                    {
+                        var success = false;
+                        try
+                        {
+                            if (_stateMachine.CurrentDispatcher != null)
+                            {
+                                success = (bool)_stateMachine.CurrentDispatcher.Invoke(tuple.Condition, null);
+                            }
+                            else
+                            {
+                                success = tuple.Condition();
+                            }
+                        }
+                        catch (Exception e)
+                        {
+                            _stateMachine.RaiseStateMachineException(e);
+                        }
+                        return success;
+                    }
+                    return true;
+                })
                 .Select(tuple => tuple.Action).ToArray();
         }
 
@@ -144,7 +190,20 @@ namespace ReactiveStateMachine
         public void Enter(T fromState)
         {
             foreach (var entryAction in GetValidEntryActions(fromState))
-                entryAction();
+            {
+                try
+                {
+                    if (_stateMachine.CurrentDispatcher != null)
+                        _stateMachine.CurrentDispatcher.Invoke(entryAction);
+                    else
+                        entryAction();
+                }
+                catch (Exception e)
+                {
+                    _stateMachine.RaiseStateMachineException(e);
+                    continue;
+                }
+            }
         }
 
         public void Exit(T toState)
@@ -154,7 +213,20 @@ namespace ReactiveStateMachine
                 subscription.Dispose();
 
             foreach (var exitAction in GetValidExitActions(toState))
-                exitAction();
+            {
+                try
+                {
+                    if (_stateMachine.CurrentDispatcher != null)
+                        _stateMachine.CurrentDispatcher.Invoke(exitAction);
+                    else
+                        exitAction();
+                }
+                catch (Exception e)
+                {
+                    _stateMachine.RaiseStateMachineException(e);
+                    continue;
+                }
+            }
         }
 
         public void ResumeTransitions()

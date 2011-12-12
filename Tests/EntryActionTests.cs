@@ -29,7 +29,8 @@ namespace Tests
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.True(entryActionCalled);
         }
@@ -57,7 +58,8 @@ namespace Tests
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.AreEqual(numEntryActionsToCall, numEntryActionsCalled);
         }
@@ -129,7 +131,8 @@ namespace Tests
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.True(entryActionCalled);
         }
@@ -155,7 +158,8 @@ namespace Tests
 
             StateMachine.Start();
 
-            evt.WaitOne();
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.False(entryActionCalled);
         }

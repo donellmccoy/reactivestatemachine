@@ -99,14 +99,14 @@ namespace Tests
 
             StateMachine.Start();
 
-            startedEvt.WaitOne();
+            while (!startedEvt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             trigger.OnNext(new object());
 
             while (!evt.WaitOne(50))
-            {
                 DispatcherHelper.DoEvents();
-            }
+            
 
             Assert.False(exception);
         }
@@ -142,7 +142,8 @@ namespace Tests
 
             StateMachine.Start();
 
-            startedEvt.WaitOne();
+            while (!startedEvt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Task.Factory.StartNew(() => trigger.OnNext(new object()));
 
@@ -177,12 +178,11 @@ namespace Tests
 
             StateMachine.Start();
 
-            startedEvt.WaitOne();
-
-            while (!evt.WaitOne(50))
-            {
+            while (!startedEvt.WaitOne(50))
                 DispatcherHelper.DoEvents();
-            }
+            
+            while (!evt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             Assert.False(exception);
         }
@@ -218,7 +218,8 @@ namespace Tests
 
             StateMachine.Start();
 
-            startedEvt.WaitOne();
+            while (!startedEvt.WaitOne(50))
+                DispatcherHelper.DoEvents();
 
             while (!evt.WaitOne(50))
             {
@@ -231,25 +232,239 @@ namespace Tests
         [Test]
         public void EntryActionCanAccessDispatcher()
         {
-            
+            var evt = new ManualResetEvent(false);
+
+            StateMachine = new ReactiveStateMachine.ReactiveStateMachine<TestStates>("TestMachine", TestStates.Collapsed);
+            var dispatcherObject = new Window();
+
+            var exception = false;
+
+            var entryAction = new Action(() => dispatcherObject.Dispatcher.VerifyAccess());
+
+            StateMachine.AddAutomaticTransition(TestStates.Collapsed, TestStates.FadingIn);
+            StateMachine.AddEntryAction(TestStates.FadingIn, entryAction);
+
+            StateMachine.StateMachineException += (sender, args) => { exception = true;
+                                                                        evt.Set();
+            };
+
+            StateMachine.StateChanged += (sender, args) => evt.Set();
+
+            StateMachine.Start();
+
+            while (!evt.WaitOne(50))
+            {
+                DispatcherHelper.DoEvents();
+            }
+
+            Assert.False(exception);
         }
 
         [Test]
         public void ConditionOfEntryActionCanAccessDispatcher()
         {
-            
+            var evt = new ManualResetEvent(false);
+
+            StateMachine = new ReactiveStateMachine.ReactiveStateMachine<TestStates>("TestMachine", TestStates.Collapsed);
+            var dispatcherObject = new Window();
+
+            var exception = false;
+
+            var entryAction = new Action(() => evt.Set());
+            var condition = new Func<bool>(() =>
+            {
+                dispatcherObject.Dispatcher.VerifyAccess();
+                return true;
+            });
+
+            StateMachine.AddAutomaticTransition(TestStates.Collapsed, TestStates.FadingIn);
+            StateMachine.AddEntryAction(TestStates.FadingIn, entryAction, condition);
+
+            StateMachine.StateMachineException += (sender, args) =>
+            {
+                exception = true;
+                evt.Set();
+            };
+
+            StateMachine.StateChanged += (sender, args) => evt.Set();
+
+            StateMachine.Start();
+
+            while (!evt.WaitOne(50))
+            {
+                DispatcherHelper.DoEvents();
+            }
+
+            Assert.False(exception);
         }
 
         [Test]
         public void ExitActionCanAccessDispatcher()
         {
-            
+            var evt = new ManualResetEvent(false);
+
+            StateMachine = new ReactiveStateMachine.ReactiveStateMachine<TestStates>("TestMachine", TestStates.Collapsed);
+            var dispatcherObject = new Window();
+
+            var exception = false;
+
+            var exitAction = new Action(() => dispatcherObject.Dispatcher.VerifyAccess());
+
+            StateMachine.AddAutomaticTransition(TestStates.Collapsed, TestStates.FadingIn);
+            StateMachine.AddExitAction(TestStates.Collapsed, exitAction);
+
+            StateMachine.StateMachineException += (sender, args) =>
+            {
+                exception = true;
+                evt.Set();
+            };
+
+            StateMachine.StateChanged += (sender, args) => evt.Set();
+
+            StateMachine.Start();
+
+            while (!evt.WaitOne(50))
+            {
+                DispatcherHelper.DoEvents();
+            }
+
+            Assert.False(exception);
         }
 
         [Test]
         public void ConditionOfExitActionCanAccessDispatcher()
         {
-            
+            var evt = new ManualResetEvent(false);
+
+            StateMachine = new ReactiveStateMachine.ReactiveStateMachine<TestStates>("TestMachine", TestStates.Collapsed);
+            var dispatcherObject = new Window();
+
+            var exception = false;
+
+            var exitAction = new Action(() => evt.Set());
+            var condition = new Func<bool>(() =>
+            {
+                dispatcherObject.Dispatcher.VerifyAccess();
+                return true;
+            });
+
+            StateMachine.AddAutomaticTransition(TestStates.Collapsed, TestStates.FadingIn);
+            StateMachine.AddExitAction(TestStates.Collapsed, exitAction, condition);
+
+            StateMachine.StateMachineException += (sender, args) =>
+            {
+                exception = true;
+                evt.Set();
+            };
+
+            StateMachine.StateChanged += (sender, args) => evt.Set();
+
+            StateMachine.Start();
+
+            while (!evt.WaitOne(50))
+            {
+                DispatcherHelper.DoEvents();
+            }
+
+            Assert.False(exception);
+        }
+
+        [Test]
+        public void StateMachineStartedEventHandlerCanAccessDispatcher()
+        {
+            var evt = new ManualResetEvent(false);
+
+            var dispatcherObject = new Window();
+
+            StateMachine = new ReactiveStateMachine.ReactiveStateMachine<TestStates>("TestMachine", TestStates.Collapsed);
+
+            StateMachine.StateMachineStarted += (sender, args) => 
+            { 
+                Assert.DoesNotThrow( () => dispatcherObject.Dispatcher.VerifyAccess());
+                evt.Set();
+            };
+
+            StateMachine.Start();
+
+            while (!evt.WaitOne(50))
+            {
+                DispatcherHelper.DoEvents();
+            }
+        }
+
+        [Test]
+        public void StateChangedEventHandlerCanAccessDispatcher()
+        {
+            var evt = new ManualResetEvent(false);
+
+            var dispatcherObject = new Window();
+
+            StateMachine = new ReactiveStateMachine.ReactiveStateMachine<TestStates>("TestMachine", TestStates.Collapsed);
+
+            StateMachine.AddAutomaticTransition(TestStates.Collapsed, TestStates.FadingIn);
+
+            StateMachine.StateChanged += (sender, args) =>
+            {
+                Assert.DoesNotThrow(() => dispatcherObject.Dispatcher.VerifyAccess());
+                evt.Set();
+            };
+
+            StateMachine.Start();
+
+            while (!evt.WaitOne(50))
+            {
+                DispatcherHelper.DoEvents();
+            }
+        }
+
+        [Test]
+        public void StateMachineStoppedEventHandlerCanAccessDispatcher()
+        {
+            var evt = new ManualResetEvent(false);
+
+            var dispatcherObject = new Window();
+
+            StateMachine = new ReactiveStateMachine.ReactiveStateMachine<TestStates>("TestMachine", TestStates.Collapsed);
+
+            StateMachine.StateMachineStopped += (sender, args) =>
+            {
+                Assert.DoesNotThrow(() => dispatcherObject.Dispatcher.VerifyAccess());
+                evt.Set();
+            };
+
+            StateMachine.Start();
+
+            StateMachine.Stop();
+
+            while (!evt.WaitOne(50))
+            {
+                DispatcherHelper.DoEvents();
+            }
+        }
+
+        [Test]
+        public void StateMachineExceptionEventHandlerCanAccessDispatcher()
+        {
+            var evt = new ManualResetEvent(false);
+
+            var dispatcherObject = new Window();
+
+            StateMachine = new ReactiveStateMachine.ReactiveStateMachine<TestStates>("TestMachine", TestStates.Collapsed);
+
+            StateMachine.AddAutomaticTransition(TestStates.Collapsed, TestStates.FadingIn, new Action(() => { throw new Exception(); }));
+
+            StateMachine.StateMachineException += (sender, args) =>
+            {
+                Assert.DoesNotThrow(() => dispatcherObject.Dispatcher.VerifyAccess());
+                evt.Set();
+            };
+
+            StateMachine.Start();
+
+            while (!evt.WaitOne(50))
+            {
+                DispatcherHelper.DoEvents();
+            }
         }
     }
 }
