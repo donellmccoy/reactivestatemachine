@@ -52,10 +52,12 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Actions\StateAction.cs" />
+    <Compile Include="Configuration\TransitionConfiguration.cs" />
     <Compile Include="IgnoringObservable.cs" />
     <Compile Include="IIgnoringObservable.cs" />
     <Compile Include="ObservableExtensions.cs" />
     <Compile Include="StateChangedEventArgs.cs" />
+    <Compile Include="StateMachineConfigurationException.cs" />
     <Compile Include="StateMachineExceptionEventArgs.cs" />
     <Compile Include="TrackingStateMachine.cs" />
     <Compile Include="Transitions\TimedTransition.cs" />

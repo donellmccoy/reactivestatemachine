@@ -5,6 +5,7 @@ using System.ComponentModel;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Threading;
+using ReactiveStateMachine.Configuration;
 using ReactiveStateMachine.Transitions;
 using ReactiveStateMachine.Triggers;
 
@@ -19,13 +20,15 @@ namespace ReactiveStateMachine
     {
         #region private fields
 
-        private BlockingCollection<Action> _queue = new BlockingCollection<Action>();
+        private BlockingCollection<Action> _queue;
 
         private readonly Dictionary<T, State<T>> _states = new Dictionary<T, State<T>>();
 
         private bool _running;
 
         internal Dispatcher CurrentDispatcher { get; private set; }
+
+        private readonly BlockingCollection<Action> _configurationQueue = new BlockingCollection<Action>();
 
         #endregion
 
@@ -211,6 +214,14 @@ namespace ReactiveStateMachine
             if (_running)
                 throw new InvalidOperationException("State machine is already running");
             _running = true;
+
+
+            //consume all actions from the configuration queue
+            Action configurationAction;
+
+            while (_configurationQueue.TryTake(out configurationAction))
+                configurationAction();
+
 
             _queue = new BlockingCollection<Action>();
 
@@ -418,6 +429,29 @@ namespace ReactiveStateMachine
             var transition = new TriggeredTransition<T, TTrigger>(fromState, toState, trigger, transitionAction, condition);
 
             stateObject.AddTriggeredTransition(transition);
+        }
+
+        public TransitionConfiguration<T,TTrigger> AddTransition<TTrigger>(IObservable<TTrigger> trigger) where TTrigger:class
+        {
+            return AddTransition(new Trigger<TTrigger>(trigger));
+        }
+
+        public TransitionConfiguration<T, TTrigger> AddTransition<TTrigger>(Trigger<TTrigger> trigger) where TTrigger:class
+        {
+            var config = new TransitionConfiguration<T, TTrigger>(trigger);
+
+            _configurationQueue.Add(() =>
+            {
+                if (!config.IsFromStateSet || !config.IsToStateSet)
+                {
+                    RaiseStateMachineException(new StateMachineConfigurationException("Transition configuration is underspecified"));
+                    return;
+                }
+
+                AddTransition(config.FromState, config.ToState, config.Trigger, config.Condition, config.TransitionAction);
+            });
+
+            return config;
         }
 
         #endregion

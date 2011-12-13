@@ -45,7 +45,13 @@ namespace Example
             _contactUpTrigger = new EventTrigger<ContactEventArgs>(this, "ContactUp");
 
             StateMachine.AddTransition(VisibilityStates.Visible, VisibilityStates.Collapsed, _contactUpTrigger, args => StateMachine.TouchCount == 0, args => Contacts.ReleaseContactCapture(args.Contact));
-            
+
+            StateMachine.AddTransition(_contactDownTrigger)
+                        .From(VisibilityStates.Collapsed)
+                        .To(VisibilityStates.FadingIn)
+                        .Where(args => args.Contact.IsFingerRecognized)
+                        .Do(args => Console.WriteLine(args.GetPosition(null)));
+
 
             //StateMachine.AddTransition(VisibilityStates.Collapsed, VisibilityStates.Visible, _contactDownTrigger, null);
             
