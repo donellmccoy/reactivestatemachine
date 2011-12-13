@@ -29,5 +29,10 @@ namespace TouchStateMachine
         {
             get { return InputTracker.NewestPoint; }
         }
+
+        public bool ContainsContact(object contact)
+        {
+            return (InputTracker as ITouchTracker).ContainsContact(contact);
+        }
     }
 }

@@ -4,5 +4,6 @@ namespace TouchStateMachine
 {
     public interface ITouchTracker : IInputPointTracker
     {
+        bool ContainsContact(object contact);
     }
 }

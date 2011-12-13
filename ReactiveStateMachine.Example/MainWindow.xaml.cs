@@ -4,6 +4,7 @@ using System.Windows;
 using System.Windows.Input;
 using Microsoft.Surface.Presentation;
 using ReactiveStateMachine;
+using ReactiveStateMachine.Triggers;
 using TouchStateMachine;
 
 namespace Example
@@ -34,15 +35,15 @@ namespace Example
 
         private IObservable<MouseEventArgs> _mouseDownTrigger;
 
-        private ObservableTrigger<MouseEventArgs> _mouseUpTrigger;
+        private Trigger<MouseEventArgs> _mouseUpTrigger;
 
 
 
         void MainWindow_Loaded(object sender, RoutedEventArgs args)
         {
-            _stateMachine = new ReactiveStateMachine<VisibilityStates>(VisibilityStates.Collapsed);
+            _stateMachine = new ReactiveStateMachine<VisibilityStates>("VisibilityStates",VisibilityStates.Collapsed);
             _mouseDownTrigger = Observable.FromEventPattern<MouseEventArgs>(this, "MouseDown").Select(evt => evt.EventArgs);
-            _mouseUpTrigger = new ObservableTrigger<MouseEventArgs>(Observable.FromEventPattern<MouseEventArgs>(this, "MouseUp").Select(evt => evt.EventArgs));
+            _mouseUpTrigger = new Trigger<MouseEventArgs>(Observable.FromEventPattern<MouseEventArgs>(this, "MouseUp").Select(evt => evt.EventArgs));
 
             
 

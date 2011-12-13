@@ -496,6 +496,24 @@ namespace ReactiveStateMachine
             stateObject.AddTimedTransition(new TimedTransition<T, object>(fromState, toState, after, realCondition, realAction));
         }
 
+        public TimedTransitionConfiguration<T> AddTimedTransition(TimeSpan after)
+        {
+            var config = new TimedTransitionConfiguration<T>(after);
+
+            _configurationQueue.Add(() =>
+            {
+                if (!config.IsFromStateSet || !config.IsToStateSet)
+                {
+                    RaiseStateMachineException(new StateMachineConfigurationException("Transition configuration is underspecified"));
+                    return;
+                }
+
+                AddTimedTransition(config.FromState, config.ToState, config.After, config.Condition, config.TransitionAction);
+            });
+
+            return config;
+        }
+
         #endregion
 
         #region Automatic Transitions
@@ -577,6 +595,10 @@ namespace ReactiveStateMachine
         private void StartStateMachineInternal()
         {
             var state = GetState(StartState);
+
+            if (AssociatedVisualStateManager != null)
+                AssociatedVisualStateManager.TransitionState(Name, null, StartState.ToString());
+
 
             state.Enter(StartState);
             

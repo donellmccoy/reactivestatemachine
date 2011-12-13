@@ -62,6 +62,11 @@ namespace TouchStateMachine
             get { return _activeContacts.OrderByDescending(c => c.FrameTimestamp).FirstOrDefault(); }
         }
 
+        public bool ContainsContact(object contact)
+        {
+            return _activeContacts.Contains(contact);
+        }
+
         public object[] ActivePoints
         {
             get { return _activeContacts.ToArray(); }

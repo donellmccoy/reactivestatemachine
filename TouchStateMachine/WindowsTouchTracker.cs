@@ -44,6 +44,11 @@ namespace TouchStateMachine
             get { return _activeContacts.OrderByDescending(t => t.Item1).Select(t => t.Item2).FirstOrDefault(); }
         }
 
+        public bool ContainsContact(object contact)
+        {
+            return _activeContacts.Where(tuple => tuple.Item2 == contact).Count() == 1;
+        }
+
         public object[] ActivePoints
         {
             get { return _activeContacts.Select(t => t.Item2).ToArray(); }

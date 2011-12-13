@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Text;
 using System.Windows;
 using System.Windows.Controls;
@@ -26,7 +27,9 @@ namespace Example
     {
         public Window1()
         {
-            StateMachine = new TouchStateMachine<VisibilityStates>(VisibilityStates.Collapsed, new SurfaceTouchTracker());
+            StateMachine = new TouchStateMachine<VisibilityStates>("VisibilityStates", VisibilityStates.Collapsed, new SurfaceTouchTracker());
+            ContactDownTrigger = new Subject<ContactEventArgs>();
+            ContactUpTrigger = new Subject<ContactEventArgs>();
             InitializeComponent();
 
             Loaded += new RoutedEventHandler(Window1_Loaded);
@@ -35,27 +38,23 @@ namespace Example
         public TouchStateMachine<VisibilityStates> StateMachine { get; set; }
 
 
-        private EventTrigger<ContactEventArgs> _contactDownTrigger;
-        private EventTrigger<ContactEventArgs> _contactUpTrigger;
+        private Trigger<ContactEventArgs> _contactDownTrigger;
+        private Trigger<ContactEventArgs> _contactUpTrigger;
 
         void Window1_Loaded(object sender, RoutedEventArgs e)
         {
-            _contactDownTrigger = new EventTrigger<ContactEventArgs>(this, "ContactDown");
-            
-            _contactUpTrigger = new EventTrigger<ContactEventArgs>(this, "ContactUp");
+            _contactDownTrigger = new Trigger<ContactEventArgs>(ContactDownTrigger.Do( args => Console.WriteLine("ContactDown")));
+            _contactUpTrigger = new Trigger<ContactEventArgs>(ContactUpTrigger.Do(args => Console.WriteLine("ContactUp")));
 
-            StateMachine.AddTransition(VisibilityStates.Visible, VisibilityStates.Collapsed, _contactUpTrigger, args => StateMachine.TouchCount == 0, args => Contacts.ReleaseContactCapture(args.Contact));
+            StateMachine.AddTransition(_contactDownTrigger).From(VisibilityStates.Collapsed).To(VisibilityStates.FadingIn);
+            StateMachine.AddAutomaticTransition(VisibilityStates.FadingIn, VisibilityStates.Visible);
+            StateMachine.AddTransition(_contactUpTrigger).From(VisibilityStates.Visible).To(VisibilityStates.FadingOut);
+            StateMachine.AddAutomaticTransition(VisibilityStates.FadingOut, VisibilityStates.Collapsed);
 
-            StateMachine.AddTransition(_contactDownTrigger)
-                        .From(VisibilityStates.Collapsed)
-                        .To(VisibilityStates.FadingIn)
-                        .Where(args => args.Contact.IsFingerRecognized)
-                        .Do(args => Console.WriteLine(args.GetPosition(null)));
-
-
-            //StateMachine.AddTransition(VisibilityStates.Collapsed, VisibilityStates.Visible, _contactDownTrigger, null);
-            
             StateMachine.Start();
         }
+
+        public Subject<ContactEventArgs> ContactDownTrigger { get; set; }
+        public Subject<ContactEventArgs> ContactUpTrigger { get; set; }
     }
 }

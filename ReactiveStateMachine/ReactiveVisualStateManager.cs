@@ -5,6 +5,7 @@ using System.Reactive.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows;
+using System.Windows.Threading;
 
 namespace ReactiveStateMachine
 {
@@ -14,6 +15,8 @@ namespace ReactiveStateMachine
 
         private IDisposable _currentStateChangedSubscription;
         private IDisposable _transitionStoryboardCompletedSubscription;
+
+        private Dispatcher _currentDispatcher;
 
         /// <summary>
         /// A dictionary that maps the Group name of the VisualStateGroup to the associated ReactiveStateMachine
@@ -30,6 +33,8 @@ namespace ReactiveStateMachine
                 throw new ArgumentNullException("targetControl");
 
             TargetControl = targetControl;
+
+            _currentDispatcher = Dispatcher.CurrentDispatcher;
         }
 
         #endregion
@@ -65,9 +70,9 @@ namespace ReactiveStateMachine
         internal bool TransitionStateInternal(String groupName, String fromState, String toState)
         {
             var waitHandle = new ManualResetEventSlim();
-            #if DEBUG
+#if DEBUG
             Console.WriteLine("VSM: Transitioning " + groupName + " from " + fromState + " to " + toState);
-            #endif
+#endif
 
             if (TargetControl == null)
                 return false;
@@ -78,34 +83,38 @@ namespace ReactiveStateMachine
             if (_transitionStoryboardCompletedSubscription != null)
                 _transitionStoryboardCompletedSubscription.Dispose();
 
-            var group = GetVisualStateGroup(groupName);
-            var targetState = GetVisualState(group, toState);
-            var transition = GetVisualTransition(group, fromState, toState);
-                
-            if (transition != null && transition.Storyboard != null)
-            {
-                _transitionStoryboardCompletedSubscription = Observable.FromEventPattern<EventArgs>(transition.Storyboard, "Completed").Subscribe(evt =>
-                {
-                    _transitionStoryboardCompletedSubscription.Dispose();
-                    #if DEBUG
-                    Console.WriteLine("Storyboard.Completed (" + fromState + " --> " + toState + ")\t");
-                    #endif
-                    waitHandle.Set();
-                });
-            }
-            else
-            {
-                _currentStateChangedSubscription = Observable.FromEventPattern<VisualStateChangedEventArgs>(group, "CurrentStateChanged").Subscribe(evt =>
-                {
-                    _currentStateChangedSubscription.Dispose();
-                    #if DEBUG
-                    Console.WriteLine("VisualStateGroup.CurrentStateChanged (" + fromState + " --> " + toState + ")\t");
-                    #endif
-                    waitHandle.Set();
-                });
-            }
 
-            var result = base.GoToStateCore(null, TargetControl, toState, group, targetState, true);
+            var result = (bool)_currentDispatcher.Invoke(new Func<bool>(() =>
+            {
+                var group = GetVisualStateGroup(groupName);
+                var targetState = GetVisualState(group, toState);
+                var transition = GetVisualTransition(group, fromState, toState);
+
+                if (transition != null && transition.Storyboard != null)
+                {
+                    _transitionStoryboardCompletedSubscription = Observable.FromEventPattern<EventArgs>(transition.Storyboard, "Completed").Subscribe(evt =>
+                    {
+                        _transitionStoryboardCompletedSubscription.Dispose();
+#if DEBUG
+                        Console.WriteLine("Storyboard.Completed (" + fromState + " --> " + toState + ")\t");
+#endif
+                        waitHandle.Set();
+                    });
+                }
+                else
+                {
+                    _currentStateChangedSubscription = Observable.FromEventPattern<VisualStateChangedEventArgs>(group, "CurrentStateChanged").Subscribe(evt =>
+                    {
+                        _currentStateChangedSubscription.Dispose();
+#if DEBUG
+                        Console.WriteLine("VisualStateGroup.CurrentStateChanged (" + fromState + " --> " + toState + ")\t");
+#endif
+                        waitHandle.Set();
+                    });
+                }
+
+                return base.GoToStateCore(null, TargetControl, toState, group, targetState, true);
+            }));
 
             waitHandle.Wait();
 
