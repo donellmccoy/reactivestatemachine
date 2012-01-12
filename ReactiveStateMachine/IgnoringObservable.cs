@@ -16,7 +16,12 @@ namespace ReactiveStateMachine
 
         public IDisposable Subscribe(IObserver<T> observer)
         {
-            return _source.Where(t => !_ignoring).Subscribe(observer);
+            return _source.Where(t => !Ignoring()).Subscribe(observer);
+        }
+
+        private bool Ignoring()
+        {
+            return _ignoring;
         }
 
         public void Ignore()

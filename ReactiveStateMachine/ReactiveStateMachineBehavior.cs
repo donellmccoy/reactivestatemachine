@@ -35,10 +35,15 @@ namespace ReactiveStateMachine
 
             VisualStateManager.SetCustomVisualStateManager(AssociatedObject, _vsm);
 
-            foreach (var mapping in Mappings.Where(mapping => !String.IsNullOrEmpty(mapping.GroupName) && mapping.StateMachine != null))
-            {
-                _vsm.AddMapping(mapping.GroupName, mapping.StateMachine);
-            }
+            foreach (var mapping in Mappings)
+                mapping.StateMachineChanged += (sender, args) =>
+                {
+                    var m = sender as Mapping;
+
+                    if(m.StateMachine != null && !String.IsNullOrEmpty(m.GroupName))
+                        _vsm.AddMapping(m.GroupName, m.StateMachine);
+
+                };
         }
 
         #endregion
@@ -104,7 +109,8 @@ namespace ReactiveStateMachine
         /// </summary>
         public static readonly DependencyProperty StateMachineProperty =
             DependencyProperty.Register("StateMachine", typeof(IReactiveStateMachine), typeof(Mapping),
-                new FrameworkPropertyMetadata(null));
+                new FrameworkPropertyMetadata((IReactiveStateMachine)null,
+                    new PropertyChangedCallback(OnStateMachineChanged)));
 
         /// <summary>
         /// Gets or sets the StateMachine property. This dependency property 
@@ -116,7 +122,36 @@ namespace ReactiveStateMachine
             set { SetValue(StateMachineProperty, value); }
         }
 
+        /// <summary>
+        /// Handles changes to the StateMachine property.
+        /// </summary>
+        private static void OnStateMachineChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
+        {
+            Mapping target = (Mapping)d;
+            IReactiveStateMachine oldStateMachine = (IReactiveStateMachine)e.OldValue;
+            IReactiveStateMachine newStateMachine = target.StateMachine;
+            target.OnStateMachineChanged(oldStateMachine, newStateMachine);
+        }
+
+        /// <summary>
+        /// Provides derived classes an opportunity to handle changes to the StateMachine property.
+        /// </summary>
+        protected virtual void OnStateMachineChanged(IReactiveStateMachine oldStateMachine, IReactiveStateMachine newStateMachine)
+        {
+            OnStateMachineChanged(EventArgs.Empty);
+        }
+
+        internal event EventHandler StateMachineChanged;
+
+        private void OnStateMachineChanged(EventArgs e)
+        {
+            EventHandler handler = StateMachineChanged;
+            if (handler != null) handler(this, e);
+        }
+
         #endregion
+
+
 
         #endregion
     }

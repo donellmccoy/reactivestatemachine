@@ -77,15 +77,14 @@ namespace ReactiveStateMachine
             if (TargetControl == null)
                 return false;
 
-            if (_currentStateChangedSubscription != null)
-                _currentStateChangedSubscription.Dispose();
-
-            if (_transitionStoryboardCompletedSubscription != null)
-                _transitionStoryboardCompletedSubscription.Dispose();
-
-
             var result = (bool)_currentDispatcher.Invoke(new Func<bool>(() =>
             {
+                if (_currentStateChangedSubscription != null)
+                    _currentStateChangedSubscription.Dispose();
+
+                if (_transitionStoryboardCompletedSubscription != null)
+                    _transitionStoryboardCompletedSubscription.Dispose();
+
                 var group = GetVisualStateGroup(groupName);
                 var targetState = GetVisualState(group, toState);
                 var transition = GetVisualTransition(group, fromState, toState);
