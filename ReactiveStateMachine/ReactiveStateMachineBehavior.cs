@@ -36,14 +36,17 @@ namespace ReactiveStateMachine
             VisualStateManager.SetCustomVisualStateManager(AssociatedObject, _vsm);
 
             foreach (var mapping in Mappings)
-                mapping.StateMachineChanged += (sender, args) =>
-                {
-                    var m = sender as Mapping;
-
-                    if(m.StateMachine != null && !String.IsNullOrEmpty(m.GroupName))
-                        _vsm.AddMapping(m.GroupName, m.StateMachine);
-
-                };
+            {
+                if(mapping.StateMachine != null && !String.IsNullOrWhiteSpace(mapping.GroupName))
+                    _vsm.AddMapping(mapping.GroupName, mapping.StateMachine);
+                else
+                    mapping.StateMachineChanged += (sender, args) =>
+                    {
+                        var m = sender as Mapping;
+                        if (m.StateMachine != null && !String.IsNullOrWhiteSpace(m.GroupName))
+                            _vsm.AddMapping(m.GroupName, m.StateMachine);
+                    };
+            }
         }
 
         #endregion
