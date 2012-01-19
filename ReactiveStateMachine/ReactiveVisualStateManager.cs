@@ -159,7 +159,9 @@ namespace ReactiveStateMachine
             //}
 
             //if no StateMachine is registered with this name, just use the default VSM mechanism
-            return base.GoToStateCore(control, stateGroupsRoot, stateName, group, state, useTransitions);
+            
+            //have to check if any of state, stateGroupsRoot or group is null, as GoToStateCore likes to throw exceptions
+            return ((state != null) && (stateGroupsRoot != null) && (group != null)) ?  base.GoToStateCore(control, stateGroupsRoot, stateName, group, state, useTransitions) : false;
         }
 
         #endregion
