@@ -242,6 +242,9 @@ namespace ReactiveStateMachine
             foreach (var subscription in _currentSubscriptions)
                 subscription.Dispose();
 
+            //prune _currentSubscriptions
+            _currentSubscriptions.Clear();
+
             foreach (var exitAction in GetValidExitActions(toState))
             {
                 var exitActionCopy = exitAction;

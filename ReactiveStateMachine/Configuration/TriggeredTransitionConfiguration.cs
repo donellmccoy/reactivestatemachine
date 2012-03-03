@@ -2,35 +2,44 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using ReactiveStateMachine.Triggers;
 
 namespace ReactiveStateMachine.Configuration
 {
-    public class TransitionConfiguration<T>
+    public class TriggeredTransitionConfiguration<T, TTrigger>
     {
-        public TransitionConfiguration<T> From(T fromState)
+        public TriggeredTransitionConfiguration(Trigger<TTrigger> trigger)
+        {
+            if (trigger == null)
+                throw new ArgumentNullException("trigger");
+
+            Trigger = trigger;
+        }
+
+        public TriggeredTransitionConfiguration<T,TTrigger> From(T fromState)
         {
             FromState = fromState;
             return this;
         }
 
-        public TransitionConfiguration<T> To(T toState)
+        public TriggeredTransitionConfiguration<T, TTrigger> To(T toState)
         {
             ToState = toState;
             return this;
         }
 
-        public TransitionConfiguration<T> Where(Func<bool> condition)
+        public TriggeredTransitionConfiguration<T, TTrigger> Where(Func<TTrigger, bool> condition)
         {
             var existingCondition = Condition;
 
             if (existingCondition != null)
-                Condition = () => existingCondition() && condition();
+                Condition = trigger => existingCondition(trigger) && condition(trigger);
             else
                 Condition = condition;
             return this;
         }
 
-        public TransitionConfiguration<T> Do(Action transitionAction)
+        public TriggeredTransitionConfiguration<T, TTrigger> Do(Action<TTrigger> transitionAction)
         {
             TransitionAction = transitionAction;
             return this;
@@ -64,10 +73,9 @@ namespace ReactiveStateMachine.Configuration
         }
 
         internal bool IsToStateSet { get; private set; }
-
-        internal Func<bool> Condition { get; private set; }
-        internal Action TransitionAction { get; private set; }
+        
+        internal Func<TTrigger, bool> Condition { get; private set; }
+        internal Action<TTrigger> TransitionAction { get; private set; }
+        internal Trigger<TTrigger> Trigger { get; private set; }
     }
-
-
 }

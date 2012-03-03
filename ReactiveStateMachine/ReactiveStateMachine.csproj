@@ -52,11 +52,14 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Actions\StateAction.cs" />
+    <Compile Include="Configuration\AutomaticTransitionConfiguration.cs" />
     <Compile Include="Configuration\TimedTransitionConfiguration.cs" />
     <Compile Include="Configuration\TransitionConfiguration.cs" />
+    <Compile Include="Configuration\TriggeredTransitionConfiguration.cs" />
     <Compile Include="EventToObserver.cs" />
     <Compile Include="IgnoringObservable.cs" />
     <Compile Include="IIgnoringObservable.cs" />
+    <Compile Include="InputPointTrackerBase.cs" />
     <Compile Include="ObservableExtensions.cs" />
     <Compile Include="RoutedEventTrigger.cs" />
     <Compile Include="StateChangedEventArgs.cs" />

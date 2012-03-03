@@ -27,7 +27,7 @@ namespace Example
     {
         public Window1()
         {
-            StateMachine = new TouchStateMachine<VisibilityStates>("VisibilityStates", VisibilityStates.Collapsed, new SurfaceTouchTracker());
+            StateMachine = new SurfaceTouchStateMachine<VisibilityStates>("VisibilityStates", VisibilityStates.Collapsed);
             ContactDownTrigger = new Subject<ContactEventArgs>();
             ContactUpTrigger = new Subject<ContactEventArgs>();
             InitializeComponent();
@@ -35,7 +35,7 @@ namespace Example
             Loaded += new RoutedEventHandler(Window1_Loaded);
         }
 
-        public TouchStateMachine<VisibilityStates> StateMachine { get; set; }
+        public SurfaceTouchStateMachine<VisibilityStates> StateMachine { get; set; }
 
 
         private Trigger<ContactEventArgs> _contactDownTrigger;
@@ -50,6 +50,10 @@ namespace Example
             StateMachine.AddAutomaticTransition(VisibilityStates.FadingIn, VisibilityStates.Visible);
             StateMachine.AddTransition(_contactUpTrigger).From(VisibilityStates.Visible).To(VisibilityStates.FadingOut);
             StateMachine.AddAutomaticTransition(VisibilityStates.FadingOut, VisibilityStates.Collapsed);
+
+            var rsm = new WindowsTouchStateMachine<VisibilityStates>("", VisibilityStates.Collapsed);
+
+            rsm.AddTransition(Observable.Return<TouchDevice>(null)).Where(point => rsm.First(point) && rsm.Count == 2);
 
             StateMachine.Start();
         }

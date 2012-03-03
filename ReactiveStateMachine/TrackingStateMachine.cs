@@ -14,10 +14,11 @@ namespace ReactiveStateMachine
             InputTracker = inputTracker;
         }
 
-        protected override void TransitionOverride<TTrigger>(TTrigger trigger)
+        protected override void TransitionOverride<T, TTrigger>(T fromState, T toState, TTrigger trigger)
         {
             if (trigger is EventArgs)
                 InputTracker.Track(trigger as EventArgs);
         }
+
     }
 }

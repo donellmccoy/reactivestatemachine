@@ -7,7 +7,7 @@ using ReactiveStateMachine;
 
 namespace TouchStateMachine
 {
-    public class SurfaceTouchTracker : ITouchTracker
+    public class SurfaceTouchTracker : InputPointTrackerBase
     {
         private static PropertyInfo _inputArgsProperty;
         private static PropertyInfo _inputRecordProperty;
@@ -28,9 +28,7 @@ namespace TouchStateMachine
             _contactRemove = enumValues.GetValue(2);
         }
 
-        private readonly List<Contact> _activeContacts = new List<Contact>();
-
-        public void Track(EventArgs e)
+        public override void Track(EventArgs e)
         {
             if (!(e is ContactEventArgs))
                 return;
@@ -41,35 +39,10 @@ namespace TouchStateMachine
             var inputRecord = _inputRecordProperty.GetValue(rawInputEventArgs, null);
             var contactAction = _contactActionProperty.GetValue(inputRecord, null);
 
-            if (contactAction.Equals(_contactAdd) && !_activeContacts.Contains(args.Contact))
-                _activeContacts.Add(args.Contact);
-            else if (contactAction.Equals(_contactRemove) && _activeContacts.Contains(args.Contact))
-                _activeContacts.Remove(args.Contact);
-        }
-
-        public int Count
-        {
-            get { return _activeContacts.Count; }
-        }
-
-        object IInputPointTracker.OldestPoint
-        {
-            get { return _activeContacts.OrderBy(c => c.FrameTimestamp).FirstOrDefault(); }
-        }
-
-        object IInputPointTracker.NewestPoint
-        {
-            get { return _activeContacts.OrderByDescending(c => c.FrameTimestamp).FirstOrDefault(); }
-        }
-
-        public bool ContainsContact(object contact)
-        {
-            return _activeContacts.Contains(contact);
-        }
-
-        public object[] ActivePoints
-        {
-            get { return _activeContacts.ToArray(); }
+            if (contactAction.Equals(_contactAdd) && !Contains(args.Contact))
+                AddPoint(args.Contact);
+            else if (contactAction.Equals(_contactRemove) && Contains(args.Contact))
+                RemovePoint(args.Contact);
         }
     }
 }

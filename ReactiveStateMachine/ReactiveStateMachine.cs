@@ -251,6 +251,16 @@ namespace ReactiveStateMachine
             RaiseStateMachineStopped();
         }
 
+        public void Resume()
+        {
+            
+        }
+
+        public void Pause()
+        {
+            
+        }
+
         #endregion
 
         #region Configuration API
@@ -431,14 +441,14 @@ namespace ReactiveStateMachine
             stateObject.AddTriggeredTransition(transition);
         }
 
-        public TransitionConfiguration<T,TTrigger> AddTransition<TTrigger>(IObservable<TTrigger> trigger) where TTrigger:class
+        public TriggeredTransitionConfiguration<T,TTrigger> AddTransition<TTrigger>(IObservable<TTrigger> trigger) where TTrigger:class
         {
             return AddTransition(new Trigger<TTrigger>(trigger));
         }
 
-        public TransitionConfiguration<T, TTrigger> AddTransition<TTrigger>(Trigger<TTrigger> trigger) where TTrigger:class
+        public TriggeredTransitionConfiguration<T, TTrigger> AddTransition<TTrigger>(Trigger<TTrigger> trigger) where TTrigger:class
         {
-            var config = new TransitionConfiguration<T, TTrigger>(trigger);
+            var config = new TriggeredTransitionConfiguration<T, TTrigger>(trigger);
 
             _configurationQueue.Add(() =>
             {
@@ -554,6 +564,24 @@ namespace ReactiveStateMachine
             stateObject.AddAutomaticTransition(new Transition<T, object>(fromState, toState, realCondition, realAction));
         }
 
+        public AutomaticTransitionConfiguration<T> AddAutomaticTransition()
+        {
+            var config = new AutomaticTransitionConfiguration<T>();
+
+            _configurationQueue.Add(() =>
+            {
+                if (!config.IsFromStateSet || !config.IsToStateSet)
+                {
+                    RaiseStateMachineException(new StateMachineConfigurationException("Transition configuration is underspecified"));
+                    return;
+                }
+
+                AddAutomaticTransition(config.FromState, config.ToState, config.Condition, config.TransitionAction);
+            });
+
+            return config;
+        }
+
         #endregion
 
         #region State Toggles
@@ -613,10 +641,23 @@ namespace ReactiveStateMachine
         #endregion
 
         #region internal methods
-        
+
+        object _lastTrigger = null;
+
         internal void TransitionStateInternal<TTrigger>(T fromState, T toState, TTrigger trigger, Action<TTrigger> transitionAction)
         {
-            TransitionOverride(trigger);
+            //we have to check, that the same event may only come in once. this solves an issue with the tracking mechanism
+            if (trigger is EventArgs)
+            {
+                if (trigger.Equals(_lastTrigger))
+                {
+                    _lastTrigger = trigger;
+                    return;
+                }
+                _lastTrigger = trigger;
+            }
+
+            TransitionOverride(fromState, toState, trigger);
 
             if (!CurrentState.Equals(fromState))
                 return;
@@ -668,16 +709,20 @@ namespace ReactiveStateMachine
             {
                 futureState.Enter(fromState);
                 futureState.ResumeTransitions();
+
+                CurrentState = toState;
+
+                RaiseStateChanged(fromState, toState);
             }
 
-            CurrentState = toState;
-
-            RaiseStateChanged(fromState, toState);
-
-            if (vsmTransition == null || vsmTransition.IsCompleted)
-                futureState.TryAutomaticTransition();
-            else
-                vsmTransition.ContinueWith(result => futureState.TryAutomaticTransition());
+            //we can only make automatic transitions if we entered the current state from somewhere else
+            if (!isInternalTransition)
+            {
+                if (vsmTransition == null || vsmTransition.IsCompleted)
+                    futureState.TryAutomaticTransition();
+                else
+                    vsmTransition.ContinueWith(result => futureState.TryAutomaticTransition());
+            }
         }
 
         internal void EnqueueTransition(Action transition)
@@ -689,7 +734,7 @@ namespace ReactiveStateMachine
 
         #region protected methods
 
-        protected virtual void TransitionOverride<TTrigger>(TTrigger trigger)
+        protected virtual void TransitionOverride<T, TTrigger>(T fromState, T toState, TTrigger trigger)
         {
             
         }
