@@ -11,5 +11,8 @@
     <releaseNotes>Summary of changes made in this release of the package.</releaseNotes>
     <copyright>Copyright 2012</copyright>
     <tags>Rx Reactive extensions state machine touch</tags>
+	<dependencies>
+      <dependency id="ReactiveStateMachine" />
+    </dependencies>
   </metadata>
 </package>
