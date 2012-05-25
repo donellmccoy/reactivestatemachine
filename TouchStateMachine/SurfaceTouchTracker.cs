@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Windows.Input;
 using Microsoft.Surface.Presentation;
 using ReactiveStateMachine;
 
@@ -17,7 +18,7 @@ namespace TouchStateMachine
 
         public SurfaceTouchTracker()
         {
-            var contactType = typeof (Contact);
+            var contactType = typeof (Touch);
             _inputArgsProperty = contactType.GetProperty("InputArgs", BindingFlags.NonPublic | BindingFlags.Instance);
             _inputRecordProperty = contactType.Assembly.GetType("Microsoft.Surface.Presentation.RawInputSurfaceEventArgs", true).GetProperty("InputRecord");
             _contactActionProperty = contactType.Assembly.GetType("Microsoft.Surface.Presentation.RawInputContactRecord").GetProperty("Action");
@@ -30,19 +31,19 @@ namespace TouchStateMachine
 
         public override void Track(EventArgs e)
         {
-            if (!(e is ContactEventArgs))
+            if (!(e is TouchEventArgs))
                 return;
 
-            var args = e as ContactEventArgs;
+            var args = e as TouchEventArgs;
 
-            var rawInputEventArgs = _inputArgsProperty.GetValue(args.Contact, null);
+            var rawInputEventArgs = _inputArgsProperty.GetValue(args.TouchDevice, null);
             var inputRecord = _inputRecordProperty.GetValue(rawInputEventArgs, null);
             var contactAction = _contactActionProperty.GetValue(inputRecord, null);
 
-            if (contactAction.Equals(_contactAdd) && !Contains(args.Contact))
-                AddPoint(args.Contact);
-            else if (contactAction.Equals(_contactRemove) && Contains(args.Contact))
-                RemovePoint(args.Contact);
+            if (contactAction.Equals(_contactAdd) && !Contains(args.TouchDevice))
+                AddPoint(args.TouchDevice);
+            else if (contactAction.Equals(_contactRemove) && Contains(args.TouchDevice))
+                RemovePoint(args.TouchDevice);
         }
     }
 }
