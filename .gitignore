@@ -1,0 +1,14 @@
+
+/ReactiveStateMachine/bin
+/ReactiveStateMachine/obj
+/ReactiveStateMachine.Example/obj
+/ReactiveStateMachine.Example/bin
+/Tests/bin
+/Tests/obj
+/TouchStateMachine/bin
+/TouchStateMachine/obj
+*.suo
+/_ReSharper.ReactiveStateMachine
+/packages/Rx-Main.1.0.11226
+/packages/Rx-WPF.1.0.11226
+/packages/NUnit.2.5.10.11092
