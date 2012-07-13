@@ -28,8 +28,8 @@ namespace Example
         public Window1()
         {
             StateMachine = new SurfaceTouchStateMachine<VisibilityStates>("VisibilityStates", VisibilityStates.Collapsed);
-            ContactDownTrigger = new Subject<ContactEventArgs>();
-            ContactUpTrigger = new Subject<ContactEventArgs>();
+            TouchDownTrigger = new Subject<TouchEventArgs>();
+            TouchUpTrigger = new Subject<TouchEventArgs>();
             InitializeComponent();
 
             Loaded += new RoutedEventHandler(Window1_Loaded);
@@ -38,17 +38,17 @@ namespace Example
         public SurfaceTouchStateMachine<VisibilityStates> StateMachine { get; set; }
 
 
-        private Trigger<ContactEventArgs> _contactDownTrigger;
-        private Trigger<ContactEventArgs> _contactUpTrigger;
+        private Trigger<TouchEventArgs> _touchDownTrigger;
+        private Trigger<TouchEventArgs> _touchUpTrigger;
 
         void Window1_Loaded(object sender, RoutedEventArgs e)
         {
-            _contactDownTrigger = new Trigger<ContactEventArgs>(ContactDownTrigger.Do( args => Console.WriteLine("ContactDown")));
-            _contactUpTrigger = new Trigger<ContactEventArgs>(ContactUpTrigger.Do(args => Console.WriteLine("ContactUp")));
+            _touchDownTrigger = new Trigger<TouchEventArgs>(TouchDownTrigger.Do(args => Console.WriteLine("TouchDown")));
+            _touchUpTrigger = new Trigger<TouchEventArgs>(TouchUpTrigger.Do(args => Console.WriteLine("TouchUp")));
 
-            StateMachine.AddTransition(_contactDownTrigger).From(VisibilityStates.Collapsed).To(VisibilityStates.FadingIn);
+            StateMachine.AddTransition(_touchDownTrigger).From(VisibilityStates.Collapsed).To(VisibilityStates.FadingIn);
             StateMachine.AddAutomaticTransition(VisibilityStates.FadingIn, VisibilityStates.Visible);
-            StateMachine.AddTransition(_contactUpTrigger).From(VisibilityStates.Visible).To(VisibilityStates.FadingOut);
+            StateMachine.AddTransition(_touchUpTrigger).From(VisibilityStates.Visible).To(VisibilityStates.FadingOut);
             StateMachine.AddAutomaticTransition(VisibilityStates.FadingOut, VisibilityStates.Collapsed);
 
             var rsm = new WindowsTouchStateMachine<VisibilityStates>("", VisibilityStates.Collapsed);
@@ -58,7 +58,7 @@ namespace Example
             StateMachine.Start();
         }
 
-        public Subject<ContactEventArgs> ContactDownTrigger { get; set; }
-        public Subject<ContactEventArgs> ContactUpTrigger { get; set; }
+        public Subject<TouchEventArgs> TouchDownTrigger { get; set; }
+        public Subject<TouchEventArgs> TouchUpTrigger { get; set; }
     }
 }

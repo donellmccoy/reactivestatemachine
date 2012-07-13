@@ -52,11 +52,11 @@
 
     <Grid>
         <i:Interaction.Triggers>
-            <ReactiveStateMachine:RoutedEventTrigger RoutedEvent="s:Contacts.ContactUp" SourceName="source">
-                <ReactiveStateMachine:EventToObserver Observer="{Binding ContactUpTrigger, ElementName=self}"/>
+            <ReactiveStateMachine:RoutedEventTrigger RoutedEvent="UIElement.TouchUp" SourceName="source">
+                <ReactiveStateMachine:EventToObserver Observer="{Binding TouchUpTrigger, ElementName=self}"/>
             </ReactiveStateMachine:RoutedEventTrigger>
-            <ReactiveStateMachine:RoutedEventTrigger RoutedEvent="s:Contacts.ContactDown" SourceName="source">
-                <ReactiveStateMachine:EventToObserver Observer="{Binding ContactDownTrigger, ElementName=self}"/>
+            <ReactiveStateMachine:RoutedEventTrigger RoutedEvent="UIElement.TouchDown" SourceName="source">
+                <ReactiveStateMachine:EventToObserver Observer="{Binding TouchDownTrigger, ElementName=self}"/>
             </ReactiveStateMachine:RoutedEventTrigger>
         </i:Interaction.Triggers>
 
