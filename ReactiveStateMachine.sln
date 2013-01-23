@@ -1,6 +1,6 @@
 ﻿
-Microsoft Visual Studio Solution File, Format Version 11.00
-# Visual Studio 2010
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 2012
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReactiveStateMachine", "ReactiveStateMachine\ReactiveStateMachine.csproj", "{BC4FAE78-92DF-4E4F-BF3B-1B3D45E8D367}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example", "ReactiveStateMachine.Example\Example.csproj", "{07347CBC-1060-41E0-9EFE-227BEE2FD875}"
@@ -9,11 +9,11 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TouchStateMachine", "TouchStateMachine\TouchStateMachine.csproj", "{480EE2D4-2DB3-4C6C-85C9-60823EF2ACA7}"
 EndProject
-Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{90C17B07-DE1F-422F-931B-5510396A840A}"
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{4CBF544E-8593-4C20-B4A8-5006C024B2E8}"
 	ProjectSection(SolutionItems) = preProject
+		.nuget\NuGet.Config = .nuget\NuGet.Config
 		.nuget\NuGet.exe = .nuget\NuGet.exe
 		.nuget\NuGet.targets = .nuget\NuGet.targets
-		.nuget\packages.config = .nuget\packages.config
 	EndProjectSection
 EndProject
 Global
@@ -31,8 +31,8 @@ Global
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{BC4FAE78-92DF-4E4F-BF3B-1B3D45E8D367}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{BC4FAE78-92DF-4E4F-BF3B-1B3D45E8D367}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{BC4FAE78-92DF-4E4F-BF3B-1B3D45E8D367}.Debug|Mixed Platforms.ActiveCfg = Debug|x86
-		{BC4FAE78-92DF-4E4F-BF3B-1B3D45E8D367}.Debug|Mixed Platforms.Build.0 = Debug|x86
+		{BC4FAE78-92DF-4E4F-BF3B-1B3D45E8D367}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
+		{BC4FAE78-92DF-4E4F-BF3B-1B3D45E8D367}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
 		{BC4FAE78-92DF-4E4F-BF3B-1B3D45E8D367}.Debug|x86.ActiveCfg = Debug|x86
 		{BC4FAE78-92DF-4E4F-BF3B-1B3D45E8D367}.Debug|x86.Build.0 = Debug|x86
 		{BC4FAE78-92DF-4E4F-BF3B-1B3D45E8D367}.NuGet|Any CPU.ActiveCfg = NuGet|Any CPU
