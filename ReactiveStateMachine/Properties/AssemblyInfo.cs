@@ -2,10 +2,11 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
-
 // General Information about an assembly is controlled through the following 
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
+using System.Windows.Markup;
+
 [assembly: AssemblyTitle("Tools.ReactiveStateMachine")]
 [assembly: AssemblyDescription("A State Machine Toolkit based on Reactive Extensions (Rx)")]
 [assembly: AssemblyConfiguration("")]
@@ -14,6 +15,7 @@ using System.Runtime.InteropServices;
 [assembly: AssemblyCopyright("Copyright © Microsoft 2011")]
 [assembly: AssemblyTrademark("")]
 [assembly: AssemblyCulture("")]
+[assembly: XmlnsDefinition("http://reactivestatemaschine.codeplex.com/schemas/2013", "ReactiveStateMachine")]
 
 // Setting ComVisible to false makes the types in this assembly not visible 
 // to COM components.  If you need to access a type in this assembly from 

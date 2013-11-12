@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Interactivity;
-using EventTrigger = System.Windows.Interactivity.EventTrigger;
 
 namespace ReactiveStateMachine
 {
@@ -11,8 +10,8 @@ namespace ReactiveStateMachine
 
         protected override void OnAttached()
         {
-            Behavior behavior = base.AssociatedObject as Behavior;
-            FrameworkElement associatedElement = base.AssociatedObject as FrameworkElement;
+            var behavior = AssociatedObject as Behavior;
+            var associatedElement = AssociatedObject as FrameworkElement;
 
             if (behavior != null)
             {
@@ -24,7 +23,7 @@ namespace ReactiveStateMachine
             }
             if (RoutedEvent != null)
             {
-                associatedElement.AddHandler(RoutedEvent, new RoutedEventHandler(this.OnRoutedEvent));
+                associatedElement.AddHandler(RoutedEvent, new RoutedEventHandler(OnRoutedEvent));
             }
         }
         protected virtual void OnRoutedEvent(object sender, RoutedEventArgs args)
@@ -34,23 +33,6 @@ namespace ReactiveStateMachine
         protected override string GetEventName()
         {
             return RoutedEvent.Name;
-        }
-    }
-
-    public class RoutedEventTriggerAdvanced : RoutedEventTrigger
-    {
-        protected override void OnRoutedEvent(object sender, RoutedEventArgs args)
-        {
-            base.OnEvent(new SenderAwareEventArgs() {Sender = sender, OriginalEventArgs = args});
-        }
-    }
-
-    public class EventTriggerAdvanced : EventTrigger
-    {
-        protected override void OnEvent(EventArgs eventArgs)
-        {
-
-            base.OnEvent(new SenderAwareEventArgs() {Sender = Source, OriginalEventArgs = eventArgs});
         }
     }
 

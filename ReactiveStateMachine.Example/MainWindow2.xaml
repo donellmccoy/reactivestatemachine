@@ -3,16 +3,16 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:ReactiveStateMachine="clr-namespace:ReactiveStateMachine;assembly=ReactiveStateMachine"
+        xmlns:rsm="http://reactivestatemaschine.codeplex.com/schemas/2013"
         mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         Title="MainWindow" x:Name="self" Height="350" Width="525">
     
     <Grid>
         <!--  Definieren der Behaviors um auf die Statemachine zuzugreifen Es wird dabei deie VisualStateGroup angeben  !-->
         <i:Interaction.Behaviors>
-            <ReactiveStateMachine:ReactiveStateMachineBehavior>
-                <ReactiveStateMachine:Mapping StateMachine="{Binding StateMachine, ElementName=self}" GroupName="VisibilityGroup"/>
-            </ReactiveStateMachine:ReactiveStateMachineBehavior>
+            <rsm:ReactiveStateMachineBehavior>
+                <rsm:Mapping StateMachine="{Binding StateMachine, ElementName=self}" GroupName="VisibilityGroup"/>
+            </rsm:ReactiveStateMachineBehavior>
         </i:Interaction.Behaviors>
         <!-- Die Visual States werden definiert -->
         <VisualStateManager.VisualStateGroups>
