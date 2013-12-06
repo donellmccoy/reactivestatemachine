@@ -209,6 +209,10 @@ namespace ReactiveStateMachine
                     return true;
                 }
             }
+
+            // Remove one time transitions
+            _automaticTransitions.RemoveAll(t => t.OneTime);
+
             return false;
         }
 

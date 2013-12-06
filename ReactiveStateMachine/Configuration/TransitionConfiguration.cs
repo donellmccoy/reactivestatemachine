@@ -19,6 +19,12 @@ namespace ReactiveStateMachine.Configuration
             return this;
         }
 
+        public TransitionConfiguration<T> OneTimeTransition()
+        {
+            OneTime = true;
+            return this;
+        }
+
         public TransitionConfiguration<T> Where(Func<bool> condition)
         {
             var existingCondition = Condition;
@@ -67,6 +73,8 @@ namespace ReactiveStateMachine.Configuration
 
         internal Func<bool> Condition { get; private set; }
         internal Action TransitionAction { get; private set; }
+
+        internal bool OneTime { get; private set; }
     }
 
 

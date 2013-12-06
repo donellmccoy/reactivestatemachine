@@ -530,12 +530,22 @@ namespace ReactiveStateMachine
 
         public void AddAutomaticTransition(T fromState, T toState)
         {
-            AddAutomaticTransition(fromState, toState, null, null);
+            AddAutomaticTransition(fromState, toState, null, null, false);
+        }
+
+        public void AddAutomaticTransition(T fromState, T toState, bool oneTime)
+        {
+            AddAutomaticTransition(fromState, toState, null, null, oneTime);
         }
 
         public void AddAutomaticTransition(T fromState, T toState, Func<bool> condition)
         {
-            AddAutomaticTransition(fromState, toState, condition, null);
+            AddAutomaticTransition(fromState, toState, condition, null, false);
+        }
+
+        public void AddAutomaticTransition(T fromState, T toState, Func<bool> condition, bool oneTime)
+        {
+            AddAutomaticTransition(fromState, toState, condition, null, oneTime);
         }
 
         /// <summary>
@@ -546,10 +556,27 @@ namespace ReactiveStateMachine
         /// <param name="transitionAction"></param>
         public void AddAutomaticTransition(T fromState, T toState, Action transitionAction)
         {
-            AddAutomaticTransition(fromState, toState, null, transitionAction);
+            AddAutomaticTransition(fromState, toState, null, transitionAction, false);
+        }
+
+        /// <summary>
+        /// Adds an automatic state transition from <para>fromState</para> to <para>toState</para>. This transition is initiated as soon as <para>fromState</para> is active.
+        /// </summary>
+        /// <param name="fromState"></param>
+        /// <param name="toState"></param>
+        /// <param name="transitionAction"></param>
+        /// <param name="oneTime"></param>
+        public void AddAutomaticTransition(T fromState, T toState, Action transitionAction, bool oneTime)
+        {
+            AddAutomaticTransition(fromState, toState, null, transitionAction, oneTime);
         }
 
         public void AddAutomaticTransition(T fromState, T toState, Func<bool> condition, Action transitionAction)
+        {
+            AddAutomaticTransition(fromState, toState, condition, transitionAction, false);
+        }
+
+        public void AddAutomaticTransition(T fromState, T toState, Func<bool> condition, Action transitionAction, bool oneTime)
         {
             var stateObject = GetState(fromState);
 
@@ -561,7 +588,7 @@ namespace ReactiveStateMachine
             if (transitionAction != null)
                 realAction = o => transitionAction();
 
-            stateObject.AddAutomaticTransition(new Transition<T, object>(fromState, toState, realCondition, realAction));
+            stateObject.AddAutomaticTransition(new Transition<T, object>(fromState, toState, realCondition, realAction, oneTime));
         }
 
         public AutomaticTransitionConfiguration<T> AddAutomaticTransition()
@@ -576,7 +603,7 @@ namespace ReactiveStateMachine
                     return;
                 }
 
-                AddAutomaticTransition(config.FromState, config.ToState, config.Condition, config.TransitionAction);
+                AddAutomaticTransition(config.FromState, config.ToState, config.Condition, config.TransitionAction, config.OneTime);
             });
 
             return config;
