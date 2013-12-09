@@ -206,12 +206,13 @@ namespace ReactiveStateMachine
                 if (success)
                 {
                     _stateMachine.EnqueueTransition(() => _stateMachine.TransitionStateInternal(StateRepresentation, automaticTransition.ToState, null, automaticTransition.TransitionAction));
+
+                    // Remove one time transitions
+                    _automaticTransitions.RemoveAll(t => t.OneTime);
+                    
                     return true;
                 }
             }
-
-            // Remove one time transitions
-            _automaticTransitions.RemoveAll(t => t.OneTime);
 
             return false;
         }
