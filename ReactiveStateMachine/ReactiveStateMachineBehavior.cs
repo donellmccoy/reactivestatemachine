@@ -36,15 +36,21 @@ namespace ReactiveStateMachine
 
             foreach (var mapping in Mappings)
             {
-                if(mapping.StateMachine != null && !String.IsNullOrWhiteSpace(mapping.GroupName))
+                if(mapping.StateMachine != null && !string.IsNullOrWhiteSpace(mapping.GroupName))
+                {
                     _vsm.AddMapping(mapping.GroupName, mapping.StateMachine);
+                }
                 else
+                {
                     mapping.StateMachineChanged += (sender, args) =>
                     {
                         var m = sender as Mapping;
-                        if (m.StateMachine != null && !String.IsNullOrWhiteSpace(m.GroupName))
+                        if (m?.StateMachine != null && !string.IsNullOrWhiteSpace(m.GroupName))
+                        {
                             _vsm.AddMapping(m.GroupName, m.StateMachine);
+                        }
                     };
+                }
             }
         }
 
@@ -89,16 +95,16 @@ namespace ReactiveStateMachine
         /// GroupName Dependency Property
         /// </summary>
         public static readonly DependencyProperty GroupNameProperty =
-            DependencyProperty.Register("GroupName", typeof(String), typeof(Mapping),
-                new FrameworkPropertyMetadata((String)null));
+            DependencyProperty.Register("GroupName", typeof(string), typeof(Mapping),
+                new FrameworkPropertyMetadata((string)null));
 
         /// <summary>
         /// Gets or sets the GroupName property. This dependency property 
         /// indicates ....
         /// </summary>
-        public String GroupName
+        public string GroupName
         {
-            get { return (String)GetValue(GroupNameProperty); }
+            get { return (string)GetValue(GroupNameProperty); }
             set { SetValue(GroupNameProperty, value); }
         }
 
@@ -111,8 +117,8 @@ namespace ReactiveStateMachine
         /// </summary>
         public static readonly DependencyProperty StateMachineProperty =
             DependencyProperty.Register("StateMachine", typeof(IReactiveStateMachine), typeof(Mapping),
-                new FrameworkPropertyMetadata((IReactiveStateMachine)null,
-                    new PropertyChangedCallback(OnStateMachineChanged)));
+                new FrameworkPropertyMetadata(null,
+                    OnStateMachineChanged));
 
         /// <summary>
         /// Gets or sets the StateMachine property. This dependency property 
@@ -129,9 +135,9 @@ namespace ReactiveStateMachine
         /// </summary>
         private static void OnStateMachineChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            Mapping target = (Mapping)d;
-            IReactiveStateMachine oldStateMachine = (IReactiveStateMachine)e.OldValue;
-            IReactiveStateMachine newStateMachine = target.StateMachine;
+            var target = (Mapping)d;
+            var oldStateMachine = (IReactiveStateMachine)e.OldValue;
+            var newStateMachine = target.StateMachine;
             target.OnStateMachineChanged(oldStateMachine, newStateMachine);
         }
 
@@ -147,8 +153,9 @@ namespace ReactiveStateMachine
 
         private void OnStateMachineChanged(EventArgs e)
         {
-            EventHandler handler = StateMachineChanged;
-            if (handler != null) handler(this, e);
+            var handler = StateMachineChanged;
+
+            handler?.Invoke(this, e);
         }
 
         #endregion

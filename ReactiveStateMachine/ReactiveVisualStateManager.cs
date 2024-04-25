@@ -21,7 +21,7 @@ namespace ReactiveStateMachine
         /// <summary>
         /// A dictionary that maps the Group name of the VisualStateGroup to the associated ReactiveStateMachine
         /// </summary>
-        private readonly Dictionary<String, IReactiveStateMachine> _mappings = new Dictionary<String, IReactiveStateMachine>();
+        private readonly Dictionary<string, IReactiveStateMachine> _mappings = new Dictionary<string, IReactiveStateMachine>();
 
         #endregion
 
@@ -29,10 +29,7 @@ namespace ReactiveStateMachine
 
         public ReactiveVisualStateManager(FrameworkElement targetControl)
         {
-            if (targetControl == null)
-                throw new ArgumentNullException("targetControl");
-
-            TargetControl = targetControl;
+            TargetControl = targetControl ?? throw new ArgumentNullException(nameof(targetControl));
 
             _currentDispatcher = Dispatcher.CurrentDispatcher;
         }
@@ -47,27 +44,27 @@ namespace ReactiveStateMachine
 
         #region internal methods
 
-        internal VisualStateGroup GetVisualStateGroup(String groupName)
+        internal VisualStateGroup GetVisualStateGroup(string groupName)
         {
             return GetVisualStateGroups(TargetControl).OfType<VisualStateGroup>().Where(g => g.Name == groupName).Single();
         }
 
-        internal VisualState GetVisualState(VisualStateGroup group, String state)
+        internal VisualState GetVisualState(VisualStateGroup group, string state)
         {
             return group.States.OfType<VisualState>().Where(s => s.Name == state).Single();
         }
 
-        internal VisualTransition GetVisualTransition(VisualStateGroup group, String fromState, String toState)
+        internal VisualTransition GetVisualTransition(VisualStateGroup group, string fromState, string toState)
         {
             return group.Transitions.OfType<VisualTransition>().Where(t => t.From == fromState && t.To == toState).SingleOrDefault();
         }
 
-        internal Task<bool> TransitionState(String groupName, String fromState, String toState)
+        internal Task<bool> TransitionState(string groupName, string fromState, string toState)
         {
             return Task.Factory.StartNew(() => TransitionStateInternal(groupName, fromState, toState));
         }
 
-        internal bool TransitionStateInternal(String groupName, String fromState, String toState)
+        internal bool TransitionStateInternal(string groupName, string fromState, string toState)
         {
             var waitHandle = new ManualResetEventSlim();
 #if DEBUG
@@ -75,21 +72,21 @@ namespace ReactiveStateMachine
 #endif
 
             if (TargetControl == null)
-                return false;
-
-            var result = (bool)_currentDispatcher.Invoke(new Func<bool>(() =>
             {
-                if (_currentStateChangedSubscription != null)
-                    _currentStateChangedSubscription.Dispose();
+                return false;
+            }
 
-                if (_transitionStoryboardCompletedSubscription != null)
-                    _transitionStoryboardCompletedSubscription.Dispose();
+            var result = _currentDispatcher.Invoke(() =>
+            {
+                _currentStateChangedSubscription?.Dispose();
+
+                _transitionStoryboardCompletedSubscription?.Dispose();
 
                 var group = GetVisualStateGroup(groupName);
                 var targetState = GetVisualState(group, toState);
                 var transition = GetVisualTransition(group, fromState, toState);
 
-                if (transition != null && transition.Storyboard != null)
+                if (transition?.Storyboard != null)
                 {
                     _transitionStoryboardCompletedSubscription = Observable.FromEventPattern<EventArgs>(transition.Storyboard, "Completed").Subscribe(evt =>
                     {
@@ -113,29 +110,35 @@ namespace ReactiveStateMachine
                 }
 
                 return base.GoToStateCore(null, TargetControl, toState, group, targetState, true);
-            }));
+            });
 
             waitHandle.Wait();
 
             return result;
         }
 
-        internal void AddMapping(String groupName, IReactiveStateMachine stateMachine)
+        internal void AddMapping(string groupName, IReactiveStateMachine stateMachine)
         {
-            if (String.IsNullOrEmpty(groupName))
-                throw new ArgumentNullException("groupName");
+            if (string.IsNullOrEmpty(groupName))
+            {
+                throw new ArgumentNullException(nameof(groupName));
+            }
 
             if (stateMachine == null)
-                throw new ArgumentNullException("stateMachine");
+            {
+                throw new ArgumentNullException(nameof(stateMachine));
+            }
 
             _mappings.Add(groupName, stateMachine);
             stateMachine.AssociatedVisualStateManager = this;
         }
 
-        internal void RemoveMapping(String groupName)
+        internal void RemoveMapping(string groupName)
         {
-            if (String.IsNullOrEmpty(groupName))
-                throw new ArgumentNullException("groupName");
+            if (string.IsNullOrEmpty(groupName))
+            {
+                throw new ArgumentNullException(nameof(groupName));
+            }
 
             _mappings[groupName].AssociatedVisualStateManager = null;
             _mappings.Remove(groupName);
@@ -161,7 +164,9 @@ namespace ReactiveStateMachine
             //if no StateMachine is registered with this name, just use the default VSM mechanism
             
             //have to check if any of state, stateGroupsRoot or group is null, as GoToStateCore likes to throw exceptions
-            return ((state != null) && (stateGroupsRoot != null) && (group != null)) ?  base.GoToStateCore(control, stateGroupsRoot, stateName, group, state, useTransitions) : false;
+            return state != null && 
+                   stateGroupsRoot != null && 
+                   group != null && base.GoToStateCore(control, stateGroupsRoot, stateName, group, state, useTransitions);
         }
 
         #endregion

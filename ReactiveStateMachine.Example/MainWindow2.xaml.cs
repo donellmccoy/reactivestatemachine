@@ -66,7 +66,7 @@ namespace StateMachine_Test_001
             _mouseDownTrigger = Observable.FromEventPattern<MouseEventArgs>(Test, "MouseDown").Select(evt => evt.EventArgs);
             _mouseDownTrigger_2 = Observable.FromEventPattern<MouseEventArgs>(Test2, "MouseDown").Select(evt => evt.EventArgs);
             _mouseUpTrigger = new Trigger<MouseEventArgs>(Observable.FromEventPattern<MouseEventArgs>(Test, "MouseUp").Select(evt => evt.EventArgs));
-            _eventTrigger = (Observable.FromEventPattern<EventArgs>(this, "TestDelegateEvent").Select(evt => evt.EventArgs));
+            _eventTrigger = Observable.FromEventPattern<EventArgs>(this, "TestDelegateEvent").Select(evt => evt.EventArgs);
 
 
             //Hier werden die Übergänge definiert  Erst der Trigger dann vom State zum State  zusätzlich kann man nach ein DO einfügen über dem man eine Aktion ausführen kann

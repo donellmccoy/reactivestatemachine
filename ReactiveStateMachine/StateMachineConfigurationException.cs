@@ -4,7 +4,7 @@ namespace ReactiveStateMachine
 {
     public class StateMachineConfigurationException : Exception
     {
-        public StateMachineConfigurationException(String message) : base(message)
+        public StateMachineConfigurationException(string message) : base(message)
         {
             
         }

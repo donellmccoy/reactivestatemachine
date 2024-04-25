@@ -26,10 +26,8 @@ namespace ReactiveStateMachine.Configuration
         {
             var existingCondition = Condition;
 
-            if (existingCondition != null)
-                Condition = () => existingCondition() && condition();
-            else
-                Condition = condition;
+            Condition = existingCondition != null ? () => existingCondition() && condition() : condition;
+
             return this;
         }
 

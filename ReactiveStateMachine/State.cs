@@ -52,7 +52,7 @@ namespace ReactiveStateMachine
         private IEnumerable<Action> GetValidEntryActions(T fromState)
         {
             return _entryActions.
-                Where(tuple => (!tuple.IsReferenceStateSet || tuple.ReferenceState.Equals(fromState))).
+                Where(tuple => !tuple.IsReferenceStateSet || tuple.ReferenceState.Equals(fromState)).
                 Where(tuple =>
                 {
                     if (tuple.Condition == null)
@@ -100,7 +100,7 @@ namespace ReactiveStateMachine
         public IEnumerable<Action> GetValidExitActions(T toState)
         {
             return _exitActions
-                .Where(tuple => (!tuple.IsReferenceStateSet || tuple.ReferenceState.Equals(toState)))
+                .Where(tuple => !tuple.IsReferenceStateSet || tuple.ReferenceState.Equals(toState))
                 .Where(tuple =>
                 {
                     if (tuple.Condition == null)
@@ -223,15 +223,17 @@ namespace ReactiveStateMachine
                     }
                 }
 
-                if (success)
+                if (!success)
                 {
-                    _stateMachine.EnqueueTransition(() => _stateMachine.TransitionStateInternal(StateRepresentation, automaticTransition.ToState, null, automaticTransition.TransitionAction));
-
-                    // Remove one time transitions
-                    _automaticTransitions.RemoveAll(t => t.OneTime);
-                    
-                    return true;
+                    continue;
                 }
+
+                _stateMachine.EnqueueTransition(() => _stateMachine.TransitionStateInternal(StateRepresentation, automaticTransition.ToState, null, automaticTransition.TransitionAction));
+
+                // Remove one time transitions
+                _automaticTransitions.RemoveAll(t => t.OneTime);
+                    
+                return true;
             }
 
             return false;
@@ -336,12 +338,7 @@ namespace ReactiveStateMachine
                             }
                         });
                         
-                        if (_stateMachine.CurrentDispatcher != null)
-                        {
-                            return (bool)_stateMachine.CurrentDispatcher.Invoke(safeCondition);
-                        }
-
-                        return safeCondition();
+                        return _stateMachine.CurrentDispatcher?.Invoke(safeCondition) ?? safeCondition();
                     }).                    
                     Subscribe(args => _stateMachine.EnqueueTransition(() => _stateMachine.TransitionStateInternal(StateRepresentation, timedTransitionCopy.ToState, args, timedTransitionCopy.TransitionAction)));
                 _currentSubscriptions.Add(subscription);

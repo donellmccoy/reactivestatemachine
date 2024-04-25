@@ -10,10 +10,9 @@ namespace ReactiveStateMachine
 
         protected override void OnAttached()
         {
-            var behavior = AssociatedObject as Behavior;
             var associatedElement = AssociatedObject as FrameworkElement;
 
-            if (behavior != null)
+            if (AssociatedObject is Behavior behavior)
             {
                 associatedElement = ((IAttachedObject)behavior).AssociatedObject as FrameworkElement;
             }

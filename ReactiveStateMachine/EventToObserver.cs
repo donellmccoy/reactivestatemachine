@@ -10,8 +10,7 @@ namespace ReactiveStateMachine
 
         protected override void Invoke(object parameter)
         {
-            if (_onNextMethod != null)
-                _onNextMethod.Invoke(Observer, new object[] { parameter });
+            _onNextMethod?.Invoke(Observer, new[] { parameter });
         }
 
         #region Observer
@@ -21,7 +20,7 @@ namespace ReactiveStateMachine
         /// </summary>
         public static readonly DependencyProperty ObserverProperty =
             DependencyProperty.Register("Observer", typeof(object), typeof(EventToObserver),
-                new FrameworkPropertyMetadata(null, (PropertyChangedCallback)OnObserverChanged));
+                new FrameworkPropertyMetadata(null, OnObserverChanged));
 
         /// <summary>
         /// Gets or sets the Observer property. This dependency property 
@@ -38,9 +37,9 @@ namespace ReactiveStateMachine
         /// </summary>
         private static void OnObserverChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            EventToObserver target = (EventToObserver)d;
-            object oldObserver = e.OldValue;
-            object newObserver = target.Observer;
+            var target = (EventToObserver)d;
+            var oldObserver = e.OldValue;
+            var newObserver = target.Observer;
             target.OnObserverChanged(oldObserver, newObserver);
         }
 
@@ -50,7 +49,9 @@ namespace ReactiveStateMachine
         protected virtual void OnObserverChanged(object oldObserver, object newObserver)
         {
             if (newObserver != null)
+            {
                 _onNextMethod = Observer.GetType().GetMethod("OnNext");
+            }
         }
 
         #endregion

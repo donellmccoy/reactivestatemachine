@@ -7,10 +7,7 @@ namespace ReactiveStateMachine.Configuration
     {
         public TriggeredTransitionConfiguration(Trigger<TTrigger> trigger)
         {
-            if (trigger == null)
-                throw new ArgumentNullException("trigger");
-
-            Trigger = trigger;
+            Trigger = trigger ?? throw new ArgumentNullException(nameof(trigger));
         }
 
         public TriggeredTransitionConfiguration<T,TTrigger> From(T fromState)
@@ -29,10 +26,8 @@ namespace ReactiveStateMachine.Configuration
         {
             var existingCondition = Condition;
 
-            if (existingCondition != null)
-                Condition = trigger => existingCondition(trigger) && condition(trigger);
-            else
-                Condition = condition;
+            Condition = existingCondition != null ? trigger => existingCondition(trigger) && condition(trigger) : condition;
+
             return this;
         }
 
@@ -45,10 +40,7 @@ namespace ReactiveStateMachine.Configuration
         private T _fromState;
         internal T FromState
         {
-            get
-            {
-                return _fromState;
-            }
+            get => _fromState;
             private set
             {
                 _fromState = value;
@@ -61,7 +53,7 @@ namespace ReactiveStateMachine.Configuration
         private T _toState;
         internal T ToState
         {
-            get { return _toState; }
+            get => _toState;
             private set
             {
                 _toState = value;

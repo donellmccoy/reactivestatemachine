@@ -62,7 +62,11 @@ namespace ReactiveStateMachine
             get => _currentState;
             private set
             {
-                if (_currentState.Equals(value)) return;
+                if (_currentState.Equals(value))
+                {
+                    return;
+                }
+
                 _currentState = value;
                 RaisePropertyChanged("CurrentState");
             }
@@ -83,7 +87,11 @@ namespace ReactiveStateMachine
             get => _startState;
             set
             {
-                if (_currentState.Equals(value)) return;
+                if (_currentState.Equals(value))
+                {
+                    return;
+                }
+
                 _startState = value;
                 RaisePropertyChanged("StartState");
             }
@@ -700,12 +708,14 @@ namespace ReactiveStateMachine
 
         private State<T> GetState(T state)
         {
-            State<T> stateObject;
-            if (!_states.TryGetValue(state, out stateObject))
+            if (_states.TryGetValue(state, out var stateObject))
             {
-                stateObject = new State<T>(state, this);
-                _states.Add(state, stateObject);
+                return stateObject;
             }
+
+            stateObject = new State<T>(state, this);
+            _states.Add(state, stateObject);
+
             return stateObject;
         }
 
@@ -713,11 +723,7 @@ namespace ReactiveStateMachine
         {
             var state = GetState(StartState);
 
-            if (AssociatedVisualStateManager != null)
-            {
-                AssociatedVisualStateManager.TransitionState(Name, null, StartState.ToString());
-            }
-
+            AssociatedVisualStateManager?.TransitionState(Name, null, StartState.ToString());
 
             state.Enter(StartState);
             
@@ -735,7 +741,7 @@ namespace ReactiveStateMachine
 
         #region internal methods
 
-        object _lastTrigger = null;
+        private object _lastTrigger;
 
         internal void TransitionStateInternal<TTrigger>(T fromState, T toState, TTrigger trigger, Action<TTrigger> transitionAction)
         {
@@ -813,16 +819,18 @@ namespace ReactiveStateMachine
             }
 
             //we can only make automatic transitions if we entered the current state from somewhere else
-            if (!isInternalTransition)
+            if (isInternalTransition)
             {
-                if (vsmTransition == null || vsmTransition.IsCompleted)
-                {
-                    futureState.TryAutomaticTransition();
-                }
-                else
-                {
-                    vsmTransition.ContinueWith(result => futureState.TryAutomaticTransition());
-                }
+                return;
+            }
+
+            if (vsmTransition == null || vsmTransition.IsCompleted)
+            {
+                futureState.TryAutomaticTransition();
+            }
+            else
+            {
+                vsmTransition.ContinueWith(result => futureState.TryAutomaticTransition());
             }
         }
 
@@ -848,16 +856,14 @@ namespace ReactiveStateMachine
         protected void RaisePropertyChanged(string name)
         {
             var handler = PropertyChanged;
-            if (handler != null)
-            {
-                handler(this, new PropertyChangedEventArgs(name));
-            }
+
+            handler?.Invoke(this, new PropertyChangedEventArgs(name));
         }
 
         #endregion
 
         #region IDisposable Members
-        //TODO: proper IDisposable implementation
+        
         public void Dispose()
         {
             throw new NotImplementedException();
