@@ -5,14 +5,15 @@
                  xmlns:i="http://schemas.microsoft.com/expression/2010/interactivity"
                  xmlns:rsm="http://reactivestatemaschine.codeplex.com/schemas/2013"
                  mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008" xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+                 xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
                  d:DesignWidth="1024" d:DesignHeight="768" SizeToContent="WidthAndHeight"
                  Title="Window1" x:Name="self">
 
-    <i:Interaction.Behaviors>
+    <b:Interaction.Behaviors>
         <rsm:ReactiveStateMachineBehavior>
             <rsm:Mapping StateMachine="{Binding StateMachine, ElementName=self}" GroupName="VisibilityStates"/>
         </rsm:ReactiveStateMachineBehavior>
-    </i:Interaction.Behaviors>
+    </b:Interaction.Behaviors>
 
     <VisualStateManager.VisualStateGroups>
         <VisualStateGroup Name="VisibilityStates">

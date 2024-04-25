@@ -2,10 +2,10 @@
 using System.Reactive.Linq;
 using System.Windows;
 using System.Windows.Input;
-using Microsoft.Surface.Presentation;
+//using Microsoft.Surface.Presentation;
 using ReactiveStateMachine;
 using ReactiveStateMachine.Triggers;
-using TouchStateMachine;
+//using TouchStateMachine;
 
 namespace Example
 {
@@ -28,7 +28,7 @@ namespace Example
         {
             InitializeComponent();
 
-            Loaded += new RoutedEventHandler(MainWindow_Loaded);
+            Loaded += MainWindow_Loaded;
         }
 
         private ReactiveStateMachine<VisibilityStates> _stateMachine;
@@ -37,16 +37,11 @@ namespace Example
 
         private Trigger<MouseEventArgs> _mouseUpTrigger;
 
-
-
-        void MainWindow_Loaded(object sender, RoutedEventArgs args)
+        private void MainWindow_Loaded(object sender, RoutedEventArgs args)
         {
             _stateMachine = new ReactiveStateMachine<VisibilityStates>("VisibilityStates",VisibilityStates.Collapsed);
             _mouseDownTrigger = Observable.FromEventPattern<MouseEventArgs>(this, "MouseDown").Select(evt => evt.EventArgs);
             _mouseUpTrigger = new Trigger<MouseEventArgs>(Observable.FromEventPattern<MouseEventArgs>(this, "MouseUp").Select(evt => evt.EventArgs));
-
-            
-
 
             _stateMachine.AddTransition(VisibilityStates.Collapsed, VisibilityStates.FadingIn, _mouseDownTrigger, e =>
             {

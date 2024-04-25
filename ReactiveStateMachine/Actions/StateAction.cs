@@ -21,6 +21,5 @@ namespace ReactiveStateMachine.Actions
         public Func<bool> Condition { get; private set; }
         public T ReferenceState { get; private set; }
         public bool IsReferenceStateSet { get; private set; }
-        
     }
 }

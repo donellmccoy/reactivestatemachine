@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Linq;
 using System.Windows;
-using System.Windows.Interactivity;
 using System.Windows.Markup;
+using Microsoft.Xaml.Behaviors;
 
 namespace ReactiveStateMachine
 {

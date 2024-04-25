@@ -5,15 +5,16 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:rsm="http://reactivestatemaschine.codeplex.com/schemas/2013"
         mc:Ignorable="d" xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:b="http://schemas.microsoft.com/xaml/behaviors"
         Title="MainWindow" x:Name="self" Height="350" Width="525">
     
     <Grid>
         <!--  Definieren der Behaviors um auf die Statemachine zuzugreifen Es wird dabei deie VisualStateGroup angeben  !-->
-        <i:Interaction.Behaviors>
+        <b:Interaction.Behaviors>
             <rsm:ReactiveStateMachineBehavior>
                 <rsm:Mapping StateMachine="{Binding StateMachine, ElementName=self}" GroupName="VisibilityGroup"/>
             </rsm:ReactiveStateMachineBehavior>
-        </i:Interaction.Behaviors>
+        </b:Interaction.Behaviors>
         <!-- Die Visual States werden definiert -->
         <VisualStateManager.VisualStateGroups>
         <VisualStateGroup x:Name="VisibilityGroup">

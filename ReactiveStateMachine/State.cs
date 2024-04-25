@@ -56,7 +56,9 @@ namespace ReactiveStateMachine
                 Where(tuple =>
                 {
                     if (tuple.Condition == null)
+                    {
                         return true;
+                    }
 
                     Func<bool> safeCondition = () =>
                     {
@@ -72,8 +74,10 @@ namespace ReactiveStateMachine
                     };
 
                     if (_stateMachine.CurrentDispatcher != null)
+                    {
                         return (bool)_stateMachine.CurrentDispatcher.Invoke(safeCondition, null);
-                        
+                    }
+
                     return safeCondition();
                 })
                 .Select(tuple => tuple.Action).ToArray();
@@ -100,7 +104,9 @@ namespace ReactiveStateMachine
                 .Where(tuple =>
                 {
                     if (tuple.Condition == null)
+                    {
                         return true;
+                    }
 
                     Func<bool> safeCondition = () =>
                     {
@@ -116,7 +122,9 @@ namespace ReactiveStateMachine
                     };
 
                     if (_stateMachine.CurrentDispatcher != null)
+                    {
                         return (bool)_stateMachine.CurrentDispatcher.Invoke(safeCondition, null);
+                    }
 
                     return safeCondition();
                 })
@@ -137,15 +145,21 @@ namespace ReactiveStateMachine
                 {
                     try
                     {
-                        bool success = false;
+                        var success = false;
 
                         if (_stateMachine.CurrentDispatcher != null)
+                        {
                             success = (bool)_stateMachine.CurrentDispatcher.Invoke(transition.Condition, args);
+                        }
                         else
+                        {
                             success = transition.Condition(args);
+                        }
 
                         if(!success)
+                        {
                             return;
+                        }
                     }
                     catch (Exception e)
                     {
@@ -179,7 +193,9 @@ namespace ReactiveStateMachine
                 bool success;
 
                 if (automaticTransition.Condition == null)
+                {
                     success = true;
+                }
                 else
                 {
                     var automaticTransitionCopy = automaticTransition;
@@ -198,9 +214,13 @@ namespace ReactiveStateMachine
                     };
 
                     if (_stateMachine.CurrentDispatcher != null)
+                    {
                         success = (bool)_stateMachine.CurrentDispatcher.Invoke(safeCondition, null);
+                    }
                     else
+                    {
                         success = safeCondition();
+                    }
                 }
 
                 if (success)
@@ -235,9 +255,13 @@ namespace ReactiveStateMachine
                 };
 
                 if (_stateMachine.CurrentDispatcher != null)
+                {
                     _stateMachine.CurrentDispatcher.Invoke(safeEntryAction);
+                }
                 else
+                {
                     safeEntryAction();
+                }
             }
         }
 
@@ -245,7 +269,9 @@ namespace ReactiveStateMachine
         {
             //dispose of all timed transition
             foreach (var subscription in _currentSubscriptions)
+            {
                 subscription.Dispose();
+            }
 
             //prune _currentSubscriptions
             _currentSubscriptions.Clear();
@@ -267,16 +293,22 @@ namespace ReactiveStateMachine
                 };
 
                 if (_stateMachine.CurrentDispatcher != null)
+                {
                     _stateMachine.CurrentDispatcher.Invoke(safeExitAction);
+                }
                 else
+                {
                     safeExitAction();
+                }
             }
         }
 
         public void ResumeTransitions()
         {
             foreach (var transition in _transitions)
+            {
                 transition.Resume();
+            }
 
             foreach (var timedTransition in _timedTransitions)
             {
@@ -287,7 +319,9 @@ namespace ReactiveStateMachine
                     Where(args =>
                     {
                         if (timedTransitionCopy.Condition == null)
+                        {
                             return true;
+                        }
 
                         var safeCondition = new Func<bool>(() =>
                         {
@@ -303,8 +337,10 @@ namespace ReactiveStateMachine
                         });
                         
                         if (_stateMachine.CurrentDispatcher != null)
+                        {
                             return (bool)_stateMachine.CurrentDispatcher.Invoke(safeCondition);
-                        
+                        }
+
                         return safeCondition();
                     }).                    
                     Subscribe(args => _stateMachine.EnqueueTransition(() => _stateMachine.TransitionStateInternal(StateRepresentation, timedTransitionCopy.ToState, args, timedTransitionCopy.TransitionAction)));
@@ -315,8 +351,9 @@ namespace ReactiveStateMachine
         public void IgnoreTransitions()
         {
             foreach (var transition in _transitions)
+            {
                 transition.Ignore();
+            }
         }
-
     }
 }

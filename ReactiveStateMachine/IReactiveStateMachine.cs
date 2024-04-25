@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace ReactiveStateMachine
+﻿namespace ReactiveStateMachine
 {
     public interface IReactiveStateMachine
     {

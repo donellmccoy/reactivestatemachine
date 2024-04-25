@@ -26,7 +26,7 @@ namespace ReactiveStateMachine
 
         private bool _running;
 
-        internal Dispatcher CurrentDispatcher { get; private set; }
+        internal Dispatcher CurrentDispatcher { get; }
 
         private readonly BlockingCollection<Action> _configurationQueue = new BlockingCollection<Action>();
 
@@ -34,13 +34,15 @@ namespace ReactiveStateMachine
 
         #region ctor
 
-        public ReactiveStateMachine(String name, T startState)
+        public ReactiveStateMachine(string name, T startState)
         {
             Name = name;
             StartState = startState;
             
             if(Thread.CurrentThread.GetApartmentState() == ApartmentState.STA)
+            {
                 CurrentDispatcher = Dispatcher.CurrentDispatcher;
+            }
         }
 
         #endregion
@@ -57,14 +59,12 @@ namespace ReactiveStateMachine
         /// </summary>
         public T CurrentState
         {
-            get { return _currentState; }
+            get => _currentState;
             private set
             {
-                if (!_currentState.Equals(value))
-                {
-                    _currentState = value;
-                    RaisePropertyChanged("CurrentState");
-                }
+                if (_currentState.Equals(value)) return;
+                _currentState = value;
+                RaisePropertyChanged("CurrentState");
             }
         }
 
@@ -80,14 +80,12 @@ namespace ReactiveStateMachine
         /// </summary>
         public T StartState
         {
-            get { return _startState; }
+            get => _startState;
             set
             {
-                if (!_currentState.Equals(value))
-                {
-                    _startState = value;
-                    RaisePropertyChanged("StartState");
-                }
+                if (_currentState.Equals(value)) return;
+                _startState = value;
+                RaisePropertyChanged("StartState");
             }
         }
 
@@ -105,7 +103,7 @@ namespace ReactiveStateMachine
 
         #region Name
 
-        public String Name { get; private set; }
+        public string Name { get; }
 
         #endregion
 
@@ -121,14 +119,21 @@ namespace ReactiveStateMachine
         {
             var handler = StateChanged;
 
-            if (handler == null) return;
+            if (handler == null)
+            {
+                return;
+            }
 
             Action action = () => handler(this, e);
 
             if (CurrentDispatcher != null)
+            {
                 CurrentDispatcher.Invoke(action, null);
+            }
             else
+            {
                 action();
+            }
         }
 
         private void RaiseStateChanged(T fromState, T toState)
@@ -146,14 +151,21 @@ namespace ReactiveStateMachine
         {
             var handler = StateMachineStarted;
 
-            if (handler == null) return;
-            
+            if (handler == null)
+            {
+                return;
+            }
+
             Action action = () => handler(this, EventArgs.Empty);
 
             if (CurrentDispatcher != null)
+            {
                 CurrentDispatcher.Invoke(action, null);
+            }
             else
+            {
                 action();
+            }
         }
 
         #endregion
@@ -166,14 +178,21 @@ namespace ReactiveStateMachine
         {
             var handler = StateMachineStopped;
 
-            if (handler == null) return;
+            if (handler == null)
+            {
+                return;
+            }
 
             Action action = () => handler(this, EventArgs.Empty);
 
             if (CurrentDispatcher != null)
+            {
                 CurrentDispatcher.Invoke(action, null);
+            }
             else
+            {
                 action();
+            }
         }
 
         #endregion
@@ -191,14 +210,21 @@ namespace ReactiveStateMachine
         {
             var handler = StateMachineException;
 
-            if (handler == null) return;
+            if (handler == null)
+            {
+                return;
+            }
 
             Action action = () => handler(this, e);
 
             if (CurrentDispatcher != null)
+            {
                 CurrentDispatcher.Invoke(action, null);
+            }
             else
+            {
                 action();
+            }
         }
 
         #endregion
@@ -212,22 +238,26 @@ namespace ReactiveStateMachine
         public void Start()
         {
             if (_running)
+            {
                 throw new InvalidOperationException("State machine is already running");
+            }
+
             _running = true;
 
 
             //consume all actions from the configuration queue
-            Action configurationAction;
 
-            while (_configurationQueue.TryTake(out configurationAction))
+            while (_configurationQueue.TryTake(out var configurationAction))
+            {
                 configurationAction();
+            }
 
 
             _queue = new BlockingCollection<Action>();
 
             Task.Factory.StartNew(() =>
             {
-                foreach (Action transition in _queue.GetConsumingEnumerable())
+                foreach (var transition in _queue.GetConsumingEnumerable())
                 {
                     transition();
                 }
@@ -239,14 +269,18 @@ namespace ReactiveStateMachine
         public void Stop()
         {
             if (!_running)
+            {
                 return;
+            }
 
             _running = false;
 
             _queue.CompleteAdding();
 
             while (!_queue.IsCompleted)
+            {
                 Thread.Sleep(10);
+            }
 
             RaiseStateMachineStopped();
         }
@@ -275,7 +309,9 @@ namespace ReactiveStateMachine
         public void AddEntryAction(T enteredState, Action entryAction)
         {
             if (entryAction == null)
-                throw new ArgumentNullException("entryAction");
+            {
+                throw new ArgumentNullException(nameof(entryAction));
+            }
 
             AddEntryAction(enteredState, entryAction, null);
         }
@@ -289,7 +325,9 @@ namespace ReactiveStateMachine
         public void AddEntryAction(T enteredState, Action entryAction, Func<bool> condition)
         {
             if (entryAction == null)
-                throw new ArgumentNullException("entryAction");
+            {
+                throw new ArgumentNullException(nameof(entryAction));
+            }
 
             var state = GetState(enteredState);
             state.AddEntryAction(entryAction, condition);
@@ -304,7 +342,9 @@ namespace ReactiveStateMachine
         public void AddEntryAction(T enteredState, T fromState, Action entryAction)
         {
             if (entryAction == null)
-                throw new ArgumentNullException("entryAction");
+            {
+                throw new ArgumentNullException(nameof(entryAction));
+            }
 
             AddEntryAction(enteredState, fromState, entryAction, null);
         }
@@ -319,10 +359,14 @@ namespace ReactiveStateMachine
         public void AddEntryAction(T enteredState, T fromState, Action entryAction, Func<bool> condition)
         {
             if (entryAction == null)
-                throw new ArgumentNullException("entryAction");
+            {
+                throw new ArgumentNullException(nameof(entryAction));
+            }
 
             if (enteredState.Equals(fromState))
+            {
                 throw new InvalidOperationException("entry actions are not allowed/executed for internal transitions, i.e. transitions that start and end in the same state");
+            }
 
             var state = GetState(enteredState);
             state.AddEntryAction(fromState, entryAction, condition);
@@ -340,7 +384,9 @@ namespace ReactiveStateMachine
         public void AddExitAction(T currentState, Action exitAction)
         {
             if (exitAction == null)
-                throw new ArgumentNullException("exitAction");
+            {
+                throw new ArgumentNullException(nameof(exitAction));
+            }
 
             AddExitAction(currentState, exitAction, null);
         }
@@ -354,7 +400,9 @@ namespace ReactiveStateMachine
         public void AddExitAction(T currentState, Action exitAction, Func<bool> condition)
         {
             if (exitAction == null)
-                throw new ArgumentNullException("exitAction");
+            {
+                throw new ArgumentNullException(nameof(exitAction));
+            }
 
             var state = GetState(currentState);
             state.AddExitAction(exitAction, condition);
@@ -369,7 +417,9 @@ namespace ReactiveStateMachine
         public void AddExitAction(T currentState, T toState, Action exitAction)
         {
             if (exitAction == null)
-                throw new ArgumentNullException("exitAction");
+            {
+                throw new ArgumentNullException(nameof(exitAction));
+            }
 
             AddExitAction(currentState, toState, exitAction, null);
         }
@@ -384,10 +434,14 @@ namespace ReactiveStateMachine
         public void AddExitAction(T currentState, T toState, Action exitAction, Func<bool> condition)
         {
             if (exitAction == null)
-                throw new ArgumentNullException("exitAction");
+            {
+                throw new ArgumentNullException(nameof(exitAction));
+            }
 
             if (currentState.Equals(toState))
+            {
                 throw new InvalidOperationException("exit actions are not allowed/executed for internal transitions, i.e. transitions that start and end in the same state");
+            }
 
             var state = GetState(currentState);
             state.AddExitAction(toState, exitAction, condition);
@@ -496,11 +550,15 @@ namespace ReactiveStateMachine
 
             Func<object, bool> realCondition = null;
             if (condition != null)
+            {
                 realCondition = o => condition();
+            }
 
             Action<object> realAction = null;
             if (transitionAction != null)
+            {
                 realAction = o => transitionAction();
+            }
 
 
             stateObject.AddTimedTransition(new TimedTransition<T, object>(fromState, toState, after, realCondition, realAction));
@@ -582,11 +640,15 @@ namespace ReactiveStateMachine
 
             Func<object, bool> realCondition = null;
             if (condition != null)
+            {
                 realCondition = o => condition();
+            }
 
             Action<object> realAction = null;
             if (transitionAction != null)
+            {
                 realAction = o => transitionAction();
+            }
 
             stateObject.AddAutomaticTransition(new Transition<T, object>(fromState, toState, realCondition, realAction, oneTime));
         }
@@ -652,7 +714,9 @@ namespace ReactiveStateMachine
             var state = GetState(StartState);
 
             if (AssociatedVisualStateManager != null)
+            {
                 AssociatedVisualStateManager.TransitionState(Name, null, StartState.ToString());
+            }
 
 
             state.Enter(StartState);
@@ -660,8 +724,10 @@ namespace ReactiveStateMachine
             CurrentState = StartState;
 
             if (!state.TryAutomaticTransition())
+            {
                 state.ResumeTransitions();
-            
+            }
+
             RaiseStateMachineStarted();
         }
 
@@ -687,7 +753,9 @@ namespace ReactiveStateMachine
             TransitionOverride(fromState, toState, trigger);
 
             if (!CurrentState.Equals(fromState))
+            {
                 return;
+            }
 
             var isInternalTransition = fromState.Equals(toState);
 
@@ -728,7 +796,9 @@ namespace ReactiveStateMachine
                     CurrentDispatcher.Invoke(safeAction, null);
                 }
                 else
+                {
                     safeAction();
+                }
             }
 
             //enter the next state
@@ -746,9 +816,13 @@ namespace ReactiveStateMachine
             if (!isInternalTransition)
             {
                 if (vsmTransition == null || vsmTransition.IsCompleted)
+                {
                     futureState.TryAutomaticTransition();
+                }
                 else
+                {
                     vsmTransition.ContinueWith(result => futureState.TryAutomaticTransition());
+                }
             }
         }
 
@@ -773,8 +847,11 @@ namespace ReactiveStateMachine
         public event PropertyChangedEventHandler PropertyChanged;
         protected void RaisePropertyChanged(string name)
         {
-            PropertyChangedEventHandler handler = PropertyChanged;
-            if (handler != null) handler(this, new PropertyChangedEventArgs(name));
+            var handler = PropertyChanged;
+            if (handler != null)
+            {
+                handler(this, new PropertyChangedEventArgs(name));
+            }
         }
 
         #endregion

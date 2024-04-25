@@ -1,13 +1,13 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio Version 17
+VisualStudioVersion = 17.9.34728.123
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ReactiveStateMachine", "ReactiveStateMachine\ReactiveStateMachine.csproj", "{BC4FAE78-92DF-4E4F-BF3B-1B3D45E8D367}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Example", "ReactiveStateMachine.Example\Example.csproj", "{07347CBC-1060-41E0-9EFE-227BEE2FD875}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tests", "Tests\Tests.csproj", "{F6DA9DDC-D971-41A5-90A9-1605C52B25BE}"
-EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TouchStateMachine", "TouchStateMachine\TouchStateMachine.csproj", "{480EE2D4-2DB3-4C6C-85C9-60823EF2ACA7}"
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = ".nuget", ".nuget", "{4CBF544E-8593-4C20-B4A8-5006C024B2E8}"
 	ProjectSection(SolutionItems) = preProject
@@ -81,24 +81,6 @@ Global
 		{F6DA9DDC-D971-41A5-90A9-1605C52B25BE}.Release|Mixed Platforms.Build.0 = Release|Any CPU
 		{F6DA9DDC-D971-41A5-90A9-1605C52B25BE}.Release|x86.ActiveCfg = Release|Any CPU
 		{F6DA9DDC-D971-41A5-90A9-1605C52B25BE}.Release|x86.Build.0 = Release|Any CPU
-		{480EE2D4-2DB3-4C6C-85C9-60823EF2ACA7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{480EE2D4-2DB3-4C6C-85C9-60823EF2ACA7}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{480EE2D4-2DB3-4C6C-85C9-60823EF2ACA7}.Debug|Mixed Platforms.ActiveCfg = Debug|Any CPU
-		{480EE2D4-2DB3-4C6C-85C9-60823EF2ACA7}.Debug|Mixed Platforms.Build.0 = Debug|Any CPU
-		{480EE2D4-2DB3-4C6C-85C9-60823EF2ACA7}.Debug|x86.ActiveCfg = Debug|x86
-		{480EE2D4-2DB3-4C6C-85C9-60823EF2ACA7}.Debug|x86.Build.0 = Debug|x86
-		{480EE2D4-2DB3-4C6C-85C9-60823EF2ACA7}.NuGet|Any CPU.ActiveCfg = NuGet|Any CPU
-		{480EE2D4-2DB3-4C6C-85C9-60823EF2ACA7}.NuGet|Any CPU.Build.0 = NuGet|Any CPU
-		{480EE2D4-2DB3-4C6C-85C9-60823EF2ACA7}.NuGet|Mixed Platforms.ActiveCfg = NuGet|Any CPU
-		{480EE2D4-2DB3-4C6C-85C9-60823EF2ACA7}.NuGet|Mixed Platforms.Build.0 = NuGet|Any CPU
-		{480EE2D4-2DB3-4C6C-85C9-60823EF2ACA7}.NuGet|x86.ActiveCfg = NuGet|x86
-		{480EE2D4-2DB3-4C6C-85C9-60823EF2ACA7}.NuGet|x86.Build.0 = NuGet|x86
-		{480EE2D4-2DB3-4C6C-85C9-60823EF2ACA7}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{480EE2D4-2DB3-4C6C-85C9-60823EF2ACA7}.Release|Any CPU.Build.0 = Release|Any CPU
-		{480EE2D4-2DB3-4C6C-85C9-60823EF2ACA7}.Release|Mixed Platforms.ActiveCfg = Release|Any CPU
-		{480EE2D4-2DB3-4C6C-85C9-60823EF2ACA7}.Release|Mixed Platforms.Build.0 = Release|Any CPU
-		{480EE2D4-2DB3-4C6C-85C9-60823EF2ACA7}.Release|x86.ActiveCfg = Release|Any CPU
-		{480EE2D4-2DB3-4C6C-85C9-60823EF2ACA7}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
