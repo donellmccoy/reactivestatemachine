@@ -13,3 +13,6 @@
 /packages/Rx-WPF.1.0.11226
 /packages/NUnit.2.5.10.11092
 /packages
+/.vs
+/TouchStateMachine/packages.config
+/TouchStateMachine/TouchStateMachine.csproj
